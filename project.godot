@@ -15,6 +15,10 @@ run/main_scene="res://Scenes/start_menu/start_menu.tscn"
 config/features=PackedStringArray("4.3", "Mobile")
 config/icon="res://icon.svg"
 
+[display]
+
+window/stretch/mode="canvas_items"
+
 [rendering]
 
 renderer/rendering_method="mobile"
