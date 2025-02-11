@@ -80,6 +80,18 @@ pub enum EffectDuration {
     Instant,
 }
 
+impl From<f64> for EffectDuration {
+    fn from(duration: f64) -> Self {
+        if duration == 0.0 {
+            Self::Instant
+        } else if duration < 0.0 {
+            Self::Permanent
+        } else {
+            Self::Temporary(duration)
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct Effect {
     pub kind: EffectTag,

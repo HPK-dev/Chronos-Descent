@@ -1,8 +1,10 @@
+use std::collections::HashSet;
+
 use godot::obj::Gd;
 
 use crate::entity::Entity;
 
-#[derive(Debug, strum::EnumString, strum::Display)]
+#[derive(Debug, strum::EnumString, strum::Display, Hash, PartialEq, Eq)]
 pub enum DamageTag {
     // == Elements ==
     // Fire,
@@ -20,8 +22,7 @@ pub enum DamageTag {
 
 #[derive(Debug)]
 pub struct Damage {
-    pub kind: DamageTag,
+    pub kind: HashSet<DamageTag>,
     pub amount: f64,
-
     pub source: Gd<Entity>,
 }
