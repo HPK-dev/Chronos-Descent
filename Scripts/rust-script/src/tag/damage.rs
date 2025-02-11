@@ -1,4 +1,8 @@
-#[derive(Debug, strum::EnumString)]
+use godot::obj::Gd;
+
+use crate::entity::Entity;
+
+#[derive(Debug, strum::EnumString, strum::Display)]
 pub enum DamageTag {
     // == Elements ==
     // Fire,
@@ -19,5 +23,5 @@ pub struct Damage {
     pub kind: DamageTag,
     pub amount: f64,
 
-    pub source: String,
+    pub source: Gd<Entity>,
 }

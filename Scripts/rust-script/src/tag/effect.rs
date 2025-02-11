@@ -1,6 +1,10 @@
+use godot::obj::Gd;
+
+use crate::entity::Entity;
+
 use super::damage::DamageTag;
 
-#[derive(Debug)]
+#[derive(Debug, strum::EnumString, strum::Display)]
 pub enum EffectTag {
     // == Stats ==
     /// Restores health over time.
@@ -82,5 +86,5 @@ pub struct Effect {
     pub amount: f64,
     pub duration: EffectDuration,
 
-    pub source: String,
+    pub source: Gd<Entity>,
 }
