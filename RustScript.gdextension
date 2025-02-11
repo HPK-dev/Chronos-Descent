@@ -1,0 +1,14 @@
+[configuration]
+entry_symbol = "gdext_rust_init"
+compatibility_minimum = 4.3
+reloadable = true
+
+[libraries]
+linux.debug.x86_64 =     "res://Scripts/rust-script/target/debug/librust_script.so"
+linux.release.x86_64 =   "res://Scripts/rust-script/target/release/librust_script.so"
+windows.debug.x86_64 =   "res://Scripts/rust-script/target/debug/rust_script.dll"
+windows.release.x86_64 = "res://Scripts/rust-script/target/release/rust_script.dll"
+macos.debug =            "res://Scripts/rust-script/target/debug/librust_script.dylib"
+macos.release =          "res://Scripts/rust-script/target/release/librust_script.dylib"
+macos.debug.arm64 =      "res://Scripts/rust-script/target/debug/librust_script.dylib"
+macos.release.arm64 =    "res://Scripts/rust-script/target/release/librust_script.dylib"

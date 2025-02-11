@@ -23,4 +23,4 @@ animations = [{
 sprite_frames = SubResource("SpriteFrames_18dw8")
 animation = &"idle"
 autoplay = "idle"
-frame_progress = 0.38041
+frame_progress = 0.991104
