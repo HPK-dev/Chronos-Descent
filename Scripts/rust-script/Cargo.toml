@@ -8,4 +8,5 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-godot = { version = "0.2.3", features = ["api-4-3"] }
+godot = { version = "0.2.3" }
+strum = { version = "0.27", features = ["derive"] }
