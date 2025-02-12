@@ -1,8 +1,5 @@
 use enumset::{EnumSet, EnumSetType};
-use godot::obj::Gd;
 use strum::EnumString;
-
-use crate::entity::Entity;
 
 use super::damage::DamageTag;
 
@@ -27,7 +24,7 @@ pub enum EffectTag {
     Absorb,
     /// Increase max health
     HealthBoost,
-    /// Speed up ability cooldowns
+    /// Speed up skill cooldowns
     CooldownReduction,
 
     /// Increase movement speed
@@ -97,9 +94,24 @@ impl From<f64> for EffectDuration {
 #[derive(Debug)]
 pub struct Effect {
     pub kind: EffectTag,
+    /// Used for effects that involve damage buff/debuff
     pub damage_tags: EnumSet<DamageTag>,
     pub amount: f64,
     pub duration: EffectDuration,
+}
 
-    pub source: Gd<Entity>,
+impl Effect {
+    pub fn new(
+        kind: EffectTag,
+        amount: f64,
+        duration: f64,
+        damage_tags: EnumSet<DamageTag>,
+    ) -> Self {
+        Self {
+            kind,
+            damage_tags,
+            amount,
+            duration: duration.into(),
+        }
+    }
 }
