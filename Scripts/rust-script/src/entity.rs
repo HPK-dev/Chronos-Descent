@@ -1,5 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
+use enumset::EnumSet;
 use godot::{
     classes::{CharacterBody2D, ICharacterBody2D},
     obj::WithBaseField,
@@ -171,7 +172,7 @@ impl Entity {
 
     fn apply_damage(
         &mut self,
-        kind: &HashSet<DamageTag>,
+        kind: &EnumSet<DamageTag>,
         amount: f64,
         source: &Gd<Entity>,
         factor: &EntityDamageFactors,
@@ -192,9 +193,9 @@ impl Entity {
 impl Entity {
     #[func]
     fn take_damage(&mut self, tags: Array<GString>, amount: f64, source: i64) {
-        let kind = HashSet::from_iter(
+        let kind = EnumSet::from_iter(
             tags.iter_shared()
-                .map(|tag| tag.to_string().parse().unwrap()),
+                .map(|tag| tag.to_string().parse::<DamageTag>().unwrap()),
         );
 
         self.damage_queue.push(Damage {

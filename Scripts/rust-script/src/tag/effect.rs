@@ -1,10 +1,12 @@
+use enumset::{EnumSet, EnumSetType};
 use godot::obj::Gd;
+use strum::EnumString;
 
 use crate::entity::Entity;
 
 use super::damage::DamageTag;
 
-#[derive(Debug, strum::EnumString, strum::Display)]
+#[derive(Debug, EnumString, strum::Display, EnumSetType)]
 pub enum EffectTag {
     // == Stats ==
     /// Restores health over time.
@@ -13,16 +15,16 @@ pub enum EffectTag {
     ManaRegen,
 
     /// Increase damage dealt.
-    DamageBuff(Vec<DamageTag>),
+    DamageBuff,
     /// Increase chance to deal critical damage.
-    CritChanceBuff(Vec<DamageTag>),
+    CritChanceBuff,
     /// Increase damage dealt on critical hits.
-    CritDamageBuff(Vec<DamageTag>),
+    CritDamageBuff,
 
     /// Reduces incoming damage.
-    Resistant(Vec<DamageTag>),
+    Resistant,
     /// Absorb incoming damage of specific types
-    Absorb(Vec<DamageTag>),
+    Absorb,
     /// Increase max health
     HealthBoost,
     /// Speed up ability cooldowns
@@ -38,13 +40,13 @@ pub enum EffectTag {
     Cripple,
 
     /// Damage over time
-    DoT(Vec<DamageTag>),
+    DoT,
 
     // == Crowd Control ==
     /// Entity cannot be affected by negative effects and damage
     Invincible,
     /// Entity immune to specific damage types
-    Immune(Vec<DamageTag>),
+    Immune,
     /// Entity cannot move, attack, or use abilities
     Stun,
     /// Entity cannot move
@@ -95,6 +97,7 @@ impl From<f64> for EffectDuration {
 #[derive(Debug)]
 pub struct Effect {
     pub kind: EffectTag,
+    pub damage_tags: EnumSet<DamageTag>,
     pub amount: f64,
     pub duration: EffectDuration,
 
