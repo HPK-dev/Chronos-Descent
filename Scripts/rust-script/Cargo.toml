@@ -9,5 +9,5 @@ crate-type = ["cdylib"]
 
 [dependencies]
 enumset = "1.1.5"
-godot = { version = "0.2.3" }
+godot = { version = "0.2.3", features = ["api-4-3"] }
 strum = { version = "0.27", features = ["derive"] }
