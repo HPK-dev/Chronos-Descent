@@ -52,7 +52,11 @@ pub struct Entity {
 impl Entity {
     /// Clear damage queue and calculate taken damage
     fn handle_queued_damage(&mut self) {
-        let damage_queue = std::mem::take(&mut self.damage_queue);
+        let damage_queue = if self.damage_queue.is_empty() {
+            return;
+        } else {
+            std::mem::take(&mut self.damage_queue)
+        };
 
         for damage in damage_queue {
             let amount: f64 = todo!("Calculate damage");
