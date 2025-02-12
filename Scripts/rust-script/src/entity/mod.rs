@@ -1,5 +1,6 @@
 mod api;
 mod inheritance;
+
 use godot::{classes::CharacterBody2D, prelude::*};
 use rustc_hash::FxHashMap;
 
