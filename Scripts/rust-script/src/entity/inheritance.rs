@@ -2,7 +2,7 @@ use godot::classes::{CharacterBody2D, ICharacterBody2D};
 use godot::prelude::*;
 use rustc_hash::FxHashMap;
 
-use crate::entity::EntityStats;
+use crate::entity::{EntityBaseStats, EntityStats};
 
 use super::Entity;
 
@@ -16,8 +16,8 @@ impl ICharacterBody2D for Entity {
 
         Self {
             base,
-            base_stats: EntityStats::default(),
-            current_stats: EntityStats::default(),
+            base_stats: EntityBaseStats::default(),
+            current_stats: EntityStats::from(EntityBaseStats::default()),
             effects: FxHashMap::default(),
             effect_timers: FxHashMap::default(),
             damage_queue: Vec::with_capacity(INITIAL_DAMAGE_QUEUE_CAPACITY),
@@ -33,7 +33,6 @@ impl ICharacterBody2D for Entity {
         }
 
         self.update_effect_timers(delta);
-
-        todo!("Handle queued incoming damage");
+        self.handle_queued_damage();
     }
 }

@@ -4,7 +4,7 @@ use godot::prelude::*;
 use crate::{
     projectile::Projectile,
     tag::{
-        damage::{Damage, DamageTag},
+        damage::{Damage, DamageSource, DamageTag},
         effect::{Effect, EffectDuration, EffectTag},
     },
 };
@@ -19,11 +19,23 @@ impl Entity {
     }
 
     #[func]
-    fn take_damage(&mut self, kind: Array<GString>, amount: f64, source: Gd<Entity>) {
+    fn take_damage(
+        &mut self,
+        kind: Array<GString>,
+        amount: f64,
+        source: Gd<Entity>,
+        snapshot: bool,
+    ) {
         let kind: EnumSet<DamageTag> = kind
             .iter_shared()
             .map(|tag| tag.to_string().parse::<DamageTag>().unwrap())
             .collect();
+
+        let source = if snapshot {
+            DamageSource::Snapshot(source.bind().take_snapshot())
+        } else {
+            DamageSource::Realtime(source)
+        };
 
         self.__take_damage(Damage::new(kind, amount, source))
     }
@@ -66,8 +78,6 @@ impl Entity {
     }
 
     pub fn __add_effect(&mut self, effect: Effect) {
-        self.handle_effect(&effect);
-
         let uuid = uuid::Uuid::new_v4().to_string();
         match &effect.duration {
             EffectDuration::Permanent => {
@@ -81,6 +91,8 @@ impl Entity {
                 return;
             }
         }
+
+        self.update_stats();
     }
 
     pub fn __remove_effect(&mut self, uuid: String) {
