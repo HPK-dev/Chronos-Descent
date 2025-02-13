@@ -1,7 +1,10 @@
 mod api;
 mod inheritance;
 
-use godot::{classes::CharacterBody2D, prelude::*};
+use godot::{
+    classes::{CharacterBody2D, SceneTreeTimer},
+    prelude::*,
+};
 use rustc_hash::FxHashMap;
 
 use crate::tag::{damage::Damage, effect::Effect};
@@ -44,6 +47,7 @@ pub struct Entity {
     base_stats: EntityStats,
     current_stats: EntityStats,
     effects: FxHashMap<String, Effect>,
+    effect_timers: FxHashMap<String, f64>,
     damage_queue: Vec<Damage>,
     is_alive: bool,
 }
@@ -76,5 +80,30 @@ impl Entity {
             return;
         }
         todo!("Update stats")
+    }
+
+    fn update_effect_timers(&mut self, delta: f64) {
+        self.effect_timers.iter_mut().for_each(|(_, timer)| {
+            *timer -= delta;
+        });
+
+        let expired_effects: Vec<String> = self
+            .effect_timers
+            .iter()
+            .filter_map(|(uuid, timer)| {
+                if *timer <= 0.0 {
+                    Some(uuid.clone())
+                } else {
+                    None
+                }
+            })
+            .collect();
+
+        expired_effects.into_iter().for_each(|uuid| {
+            self.effects.remove(&uuid);
+            self.effect_timers.remove(&uuid);
+        });
+
+        self.update_stats();
     }
 }

@@ -19,6 +19,7 @@ impl ICharacterBody2D for Entity {
             base_stats: EntityStats::default(),
             current_stats: EntityStats::default(),
             effects: FxHashMap::default(),
+            effect_timers: FxHashMap::default(),
             damage_queue: Vec::with_capacity(INITIAL_DAMAGE_QUEUE_CAPACITY),
             is_alive: true,
         }
@@ -30,6 +31,8 @@ impl ICharacterBody2D for Entity {
             this.queue_free();
             return;
         }
+
+        self.update_effect_timers(delta);
 
         todo!("Handle queued incoming damage");
     }

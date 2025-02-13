@@ -74,8 +74,8 @@ impl Entity {
                 self.effects.insert(uuid, effect);
             }
             EffectDuration::Temporary(duration) => {
+                self.effect_timers.insert(uuid.clone(), *duration);
                 self.effects.insert(uuid, effect);
-                todo!("Setup timer");
             }
             EffectDuration::Instant => {
                 return;
@@ -85,6 +85,7 @@ impl Entity {
 
     pub fn __remove_effect(&mut self, uuid: String) {
         self.effects.remove(&uuid);
+        self.effect_timers.remove(&uuid);
         self.update_stats();
     }
 }
