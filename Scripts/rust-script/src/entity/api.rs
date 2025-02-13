@@ -1,9 +1,12 @@
 use enumset::EnumSet;
 use godot::prelude::*;
 
-use crate::tag::{
-    damage::{Damage, DamageTag},
-    effect::{Effect, EffectDuration, EffectTag},
+use crate::{
+    projectile::Projectile,
+    tag::{
+        damage::{Damage, DamageTag},
+        effect::{Effect, EffectDuration, EffectTag},
+    },
 };
 
 use super::Entity;
@@ -11,13 +14,8 @@ use super::Entity;
 #[godot_api]
 impl Entity {
     #[func]
-    fn melee_attack(&mut self, target: Gd<Entity>) {
-        self.melee_attack_internal(target)
-    }
-
-    #[func]
-    fn ranged_attack(&mut self, target: Gd<Entity>) {
-        self.ranged_attack_internal(target)
+    fn spawn_projectile(&mut self, projectile: Gd<Projectile>) {
+        self.__spawn_projectile(projectile)
     }
 
     #[func]
@@ -27,7 +25,7 @@ impl Entity {
             .map(|tag| tag.to_string().parse::<DamageTag>().unwrap())
             .collect();
 
-        self.take_damage_internal(Damage::new(kind, amount, source))
+        self.__take_damage(Damage::new(kind, amount, source))
     }
 
     #[func]
@@ -45,38 +43,29 @@ impl Entity {
         let duration = duration.into();
         let kind = kind.to_string().parse::<EffectTag>().unwrap();
 
-        self.add_effect_internal(Effect::new(kind, amount, duration, damage_tags))
+        self.__add_effect(Effect::new(kind, amount, duration, damage_tags))
     }
 
     #[func]
     fn remove_effect(&mut self, uuid: GString) {
-        self.remove_effect_internal(uuid.to_string())
+        self.__remove_effect(uuid.to_string())
     }
 }
 
 impl Entity {
-    pub fn melee_attack_internal(&mut self, target: Gd<Entity>) {
-        let can_be_reached: bool = todo!("Check target can be reached");
-        if !can_be_reached {
-            return;
-        }
-        todo!("Call `target.take_damage` to dealt damage")
-    }
-
-    pub fn ranged_attack_internal(&mut self, target: Gd<Entity>) {
+    pub fn __spawn_projectile(&mut self, projectile: Gd<Projectile>) {
         todo!("Spawn a projectile")
     }
 
-    pub fn skill_attack_internal(&mut self, target: Gd<Entity>) {
+    pub fn __cast_skill(&mut self) {
         unimplemented!("Need a skill argument");
-        todo!()
     }
 
-    pub fn take_damage_internal(&mut self, damage: Damage) {
+    pub fn __take_damage(&mut self, damage: Damage) {
         self.damage_queue.push(damage);
     }
 
-    pub fn add_effect_internal(&mut self, effect: Effect) {
+    pub fn __add_effect(&mut self, effect: Effect) {
         self.handle_effect(&effect);
 
         let uuid = uuid::Uuid::new_v4().to_string();
@@ -94,7 +83,7 @@ impl Entity {
         }
     }
 
-    pub fn remove_effect_internal(&mut self, uuid: String) {
+    pub fn __remove_effect(&mut self, uuid: String) {
         self.effects.remove(&uuid);
         self.update_stats();
     }
