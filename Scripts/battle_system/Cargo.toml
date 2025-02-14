@@ -1,5 +1,5 @@
 [package]
-name = "rust-script"
+name = "battle_system"
 version = "0.1.0"
 edition = "2021"
 
@@ -10,6 +10,7 @@ crate-type = ["cdylib"]
 [dependencies]
 enumset = "1.1.5"
 godot = { version = "0.2.3", features = ["api-4-3"] }
+legion = "0.4.0"
 rustc-hash = "2.1.1"
 strum = { version = "0.27", features = ["derive"] }
 uuid = { version = "1.13.1", features = ["v4"] }

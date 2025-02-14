@@ -1,6 +1,6 @@
 use godot::{classes::IArea2D, obj::WithBaseField, prelude::*};
 
-use crate::projectile::Projectile;
+use crate::entity::projectile::Projectile;
 
 use super::ProjectileTarget;
 

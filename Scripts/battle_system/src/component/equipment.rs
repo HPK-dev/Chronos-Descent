@@ -1,11 +1,14 @@
 use enumset::{EnumSet, EnumSetType};
+use rustc_hash::FxHashSet;
 
 #[derive(Debug, strum::EnumString, strum::Display, EnumSetType)]
 pub enum EquipmentTag {}
 
-pub struct EquipmentStats {}
+#[derive(Debug, strum::EnumString, strum::Display)]
+pub enum EquipmentStats {}
 
+#[derive(Debug, Default)]
 pub struct Equipment {
-    pub stats: EquipmentStats,
+    pub stats: FxHashSet<EquipmentStats>,
     pub perks: EnumSet<EquipmentTag>,
 }

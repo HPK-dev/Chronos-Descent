@@ -1,6 +1,6 @@
+pub mod component;
 pub mod entity;
-pub mod projectile;
-pub mod tag;
+pub mod system;
 
 use godot::prelude::*;
 

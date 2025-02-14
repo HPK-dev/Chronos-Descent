@@ -8,7 +8,7 @@ use godot::{
     prelude::GodotClass,
 };
 
-use crate::entity::Entity;
+use crate::entity::entity::Entity;
 
 #[derive(Debug, strum::EnumString, strum::Display, EnumSetType)]
 pub enum ProjectileTag {

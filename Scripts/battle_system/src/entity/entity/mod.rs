@@ -4,7 +4,7 @@ mod inheritance;
 use godot::{classes::CharacterBody2D, prelude::*};
 use rustc_hash::FxHashMap;
 
-use crate::tag::{damage::Damage, effect::Effect};
+use crate::component::{damage::Damage, effect::Effect};
 
 #[derive(Debug)]
 pub struct EntityBaseStats {

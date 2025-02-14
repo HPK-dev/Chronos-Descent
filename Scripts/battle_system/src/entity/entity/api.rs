@@ -2,11 +2,11 @@ use enumset::EnumSet;
 use godot::prelude::*;
 
 use crate::{
-    projectile::Projectile,
-    tag::{
+    component::{
         damage::{Damage, DamageSource, DamageTag},
         effect::{Effect, EffectDuration, EffectTag},
     },
+    entity::projectile::Projectile,
 };
 
 use super::Entity;

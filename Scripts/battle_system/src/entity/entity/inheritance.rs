@@ -2,9 +2,7 @@ use godot::classes::{CharacterBody2D, ICharacterBody2D};
 use godot::prelude::*;
 use rustc_hash::FxHashMap;
 
-use crate::entity::{EntityBaseStats, EntityStats};
-
-use super::Entity;
+use super::{Entity, EntityBaseStats, EntityStats};
 
 const INITIAL_DAMAGE_QUEUE_CAPACITY: usize = 16;
 
