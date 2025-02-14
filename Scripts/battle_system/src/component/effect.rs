@@ -1,5 +1,8 @@
+use bevy_ecs::prelude::*;
 use enumset::{EnumSet, EnumSetType};
+use rustc_hash::FxHashMap;
 use strum::EnumString;
+use uuid::Uuid;
 
 use super::damage::DamageTag;
 
@@ -91,7 +94,6 @@ impl From<f64> for EffectDuration {
     }
 }
 
-#[derive(Debug)]
 pub struct Effect {
     pub kind: EffectTag,
     /// Used for effects that involve damage buff/debuff
@@ -100,18 +102,8 @@ pub struct Effect {
     pub duration: EffectDuration,
 }
 
-impl Effect {
-    pub fn new(
-        kind: EffectTag,
-        amount: f64,
-        duration: f64,
-        damage_tags: EnumSet<DamageTag>,
-    ) -> Self {
-        Self {
-            kind,
-            damage_tags,
-            amount,
-            duration: duration.into(),
-        }
-    }
-}
+#[derive(Component)]
+pub struct Effects(pub FxHashMap<Uuid, Effect>);
+
+#[derive(Component)]
+pub struct EffectsTimer(pub FxHashMap<Uuid, f64>);

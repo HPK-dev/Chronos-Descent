@@ -1,3 +1,4 @@
+use bevy_ecs::prelude::*;
 use enumset::{EnumSet, EnumSetType};
 use rustc_hash::FxHashSet;
 
@@ -11,4 +12,9 @@ pub enum EquipmentStats {}
 pub struct Equipment {
     pub stats: FxHashSet<EquipmentStats>,
     pub perks: EnumSet<EquipmentTag>,
+}
+
+#[derive(Component)]
+pub struct EquipmentSlot {
+    pub equipment: Option<Equipment>,
 }

@@ -94,7 +94,7 @@ impl From<EntityBaseStats> for EntityStats {
     }
 }
 
-#[derive(Debug, GodotClass)]
+#[derive(GodotClass)]
 #[class(base=CharacterBody2D)]
 pub struct Entity {
     base: Base<CharacterBody2D>,

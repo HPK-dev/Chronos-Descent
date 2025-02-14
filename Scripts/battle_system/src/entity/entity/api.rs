@@ -34,7 +34,7 @@ impl Entity {
         let source = if snapshot {
             DamageSource::Snapshot(source.bind().take_snapshot())
         } else {
-            DamageSource::Realtime(source)
+            DamageSource::Realtime(source.instance_id())
         };
 
         self.__take_damage(Damage::new(kind, amount, source))
@@ -55,7 +55,12 @@ impl Entity {
         let duration = duration.into();
         let kind = kind.to_string().parse::<EffectTag>().unwrap();
 
-        self.__add_effect(Effect::new(kind, amount, duration, damage_tags))
+        self.__add_effect(Effect {
+            kind,
+            amount,
+            duration,
+            damage_tags,
+        })
     }
 
     #[func]
