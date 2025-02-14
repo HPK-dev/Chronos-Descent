@@ -1,8 +1,32 @@
-use godot::{classes::IArea2D, obj::WithBaseField, prelude::*};
+use enumset::{EnumSet, EnumSetType};
+use godot::classes::Area2D;
+use godot::classes::IArea2D;
+use godot::prelude::*;
 
-use crate::entity::projectile::Projectile;
+use crate::component::Damage;
 
-use super::ProjectileTarget;
+use super::entity::Entity;
+
+#[derive(strum::EnumString, strum::Display, EnumSetType)]
+pub enum ProjectileTag {
+    Piercing,
+    Bouncing,
+}
+
+pub enum ProjectileTarget {
+    EntityFixedSpeed { target: Gd<Entity>, speed: f64 },
+    EntityFixedTime { target: Gd<Entity>, time: f64 },
+    Velocity(Vector2),
+}
+
+#[derive(GodotClass)]
+#[class(no_init, base=Area2D)]
+pub struct Projectile {
+    pub kind: EnumSet<ProjectileTag>,
+    pub damage: Damage,
+    pub target: ProjectileTarget,
+    pub base: Base<Area2D>,
+}
 
 #[godot_api]
 impl IArea2D for Projectile {
