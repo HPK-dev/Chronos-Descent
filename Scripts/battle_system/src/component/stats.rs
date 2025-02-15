@@ -31,7 +31,7 @@ impl Default for BaseStats {
     }
 }
 
-#[derive(Component)]
+#[derive(Component, Clone)]
 pub struct CurrentStats {
     pub max_health: f64,     // points
     pub health: f64,         // points

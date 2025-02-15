@@ -1,12 +1,9 @@
 use bevy_ecs::prelude::*;
 
-use crate::component::{
-    Armor, Artifact1, Artifact2, Artifact3, BaseStats, CurrentStats, InstanceId, Weapon,
-};
+use crate::component::{Armor, Artifact1, Artifact2, Artifact3, BaseStats, CurrentStats, Weapon};
 
-#[derive(Bundle)]
+#[derive(Bundle, Default)]
 pub struct EntityBundle {
-    pub instance_id: InstanceId,
     pub current_stats: CurrentStats,
     pub base_stats: BaseStats,
     pub weapon: Weapon,

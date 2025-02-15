@@ -1,19 +1,20 @@
+pub mod bundle;
 pub mod component;
-pub mod entity;
+pub mod event;
+pub mod node;
+pub mod resource;
 pub mod system;
 
-use bevy_ecs::prelude::*;
-use godot::prelude::*;
-
-macro_rules! apply {
-    ($obj:ident. {
-        $(. $func:ident ( $(args:ident),* ) ),* $(,)*
-    }) => {{
-        $(
-            $obj.$func( $( $args ),* );
-        )*
-    }};
-}
+use bevy_ecs::{
+    event::{event_update_system, EventRegistry},
+    prelude::*,
+};
+use event::{
+    ApplyEffectEvent, RegisterEntityEvent, RemoveEffectEvent, RemoveEffectsEvent, TakeDamageEvent,
+    UnregisterEntityEvent,
+};
+use godot::prelude::{gdextension, godot_api, Base, ExtensionLibrary, Gd, GodotClass, INode, Node};
+use resource::{GodotInstanceIdMap, GodotTimeDelta, GodotTimeScale};
 
 struct BattleSystemExtension;
 
@@ -40,17 +41,56 @@ impl INode for BattleSystem {
             return;
         }
 
-        // Setup systems
-        apply!(world .{
+        let world = &mut self.world;
+        let schedule = &mut self.schedule;
 
-        })
+        // Setup systems
+        world.init_resource::<GodotTimeDelta>();
+        world.init_resource::<GodotTimeScale>();
+        world.init_resource::<GodotInstanceIdMap>();
+
+        EventRegistry::register_event::<RegisterEntityEvent>(world);
+        EventRegistry::register_event::<UnregisterEntityEvent>(world);
+        EventRegistry::register_event::<ApplyEffectEvent>(world);
+        EventRegistry::register_event::<RemoveEffectEvent>(world);
+        EventRegistry::register_event::<RemoveEffectsEvent>(world);
+        EventRegistry::register_event::<TakeDamageEvent>(world);
+
+        world.add_observer(system::apply_effect);
+        world.add_observer(system::remove_effect);
+        world.add_observer(system::remove_effects);
+
+        schedule.add_systems(event_update_system);
+        schedule.add_systems(system::effect_timer_update);
     }
 
-    fn physics_process(&mut self, _delta: f64) {
+    fn physics_process(&mut self, delta: f64) {
         if godot::classes::Engine::singleton().is_editor_hint() {
             return;
         }
 
+        self.world.resource_mut::<GodotTimeDelta>().0 = delta;
         self.schedule.run(&mut self.world);
+    }
+}
+
+#[godot_api]
+impl BattleSystem {
+    #[func]
+    fn register_entity(&mut self, entity: Gd<node::Entity>) {
+        let instance_id = entity.instance_id();
+        self.world.trigger(RegisterEntityEvent(instance_id));
+    }
+
+    #[func]
+    fn unregister_entity(&mut self, entity: Gd<node::Entity>) {
+        let instance_id = entity.instance_id();
+        self.world
+            .trigger(event::UnregisterEntityEvent(instance_id));
+    }
+
+    #[func]
+    fn set_time_scale(&mut self, time_scale: f64) {
+        self.world.resource_mut::<GodotTimeScale>().0 = time_scale;
     }
 }

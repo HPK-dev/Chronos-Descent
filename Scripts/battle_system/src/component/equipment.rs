@@ -33,6 +33,12 @@ macro_rules! new_type {
                 &mut self.0
             }
         }
+
+        impl Default for $name {
+            fn default() -> Self {
+                Self(Default::default())
+            }
+        }
     };
 }
 

@@ -1,6 +1,7 @@
 use bevy_ecs::prelude::*;
 use enumset::{EnumSet, EnumSetType};
 use rustc_hash::FxHashMap;
+use std::ops::{Deref, DerefMut};
 use strum::EnumString;
 use uuid::Uuid;
 
@@ -75,7 +76,7 @@ pub enum EffectTag {
     Invisibile,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum EffectDuration {
     Permanent,
     Temporary(f64),
@@ -94,6 +95,7 @@ impl From<f64> for EffectDuration {
     }
 }
 
+#[derive(Clone)]
 pub struct Effect {
     pub kind: EffectTag,
     /// Used for effects that involve damage buff/debuff
@@ -102,8 +104,36 @@ pub struct Effect {
     pub duration: EffectDuration,
 }
 
-#[derive(Component)]
+#[derive(Component, Default)]
 pub struct Effects(pub FxHashMap<Uuid, Effect>);
 
-#[derive(Component)]
+impl Deref for Effects {
+    type Target = FxHashMap<Uuid, Effect>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for Effects {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+#[derive(Component, Default)]
 pub struct EffectsTimer(pub FxHashMap<Uuid, f64>);
+
+impl Deref for EffectsTimer {
+    type Target = FxHashMap<Uuid, f64>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for EffectsTimer {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}

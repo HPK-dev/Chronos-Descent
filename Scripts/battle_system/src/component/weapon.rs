@@ -14,8 +14,8 @@ pub struct Weapon {
     pub skill: Skill,
 }
 
-impl Weapon {
-    pub fn empty() -> Self {
+impl Default for Weapon {
+    fn default() -> Self {
         Self {
             stats: FxHashSet::default(),
             perks: EnumSet::new(),

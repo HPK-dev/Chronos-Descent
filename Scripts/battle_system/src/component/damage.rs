@@ -20,11 +20,13 @@ pub enum DamageTag {
     Projectile,
 }
 
+#[derive(Clone)]
 pub enum DamageSource {
     Realtime(InstanceId),
     Snapshot(CurrentStats),
 }
 
+#[derive(Clone)]
 pub struct Damage {
     pub kind: EnumSet<DamageTag>,
     pub base_amount: f64,
