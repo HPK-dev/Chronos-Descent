@@ -1,7 +1,8 @@
 use bevy_ecs::prelude::*;
+use godot::global::godot_print;
 
 use crate::{
-    component::EffectsTimer,
+    component::{BaseStats, CurrentStats, Effects, EffectsTimer},
     resource::{GodotTimeDelta, GodotTimeScale},
 };
 
@@ -23,3 +24,15 @@ pub fn effect_timer_update(
         }
     }
 }
+
+#[allow(unused_variables)]
+pub fn effects_changed_update(
+    mut query: Query<(&BaseStats, &Effects, &mut CurrentStats), Changed<Effects>>,
+) {
+    for (base, effects, mut currents) in query.iter() {
+        // TODO: Implement this
+        godot_print!("Stats update!")
+    }
+}
+
+pub fn current_stats_update(query: Query<Entity, Changed<CurrentStats>>) {}

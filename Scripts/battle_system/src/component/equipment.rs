@@ -39,10 +39,16 @@ macro_rules! new_type {
                 Self(Default::default())
             }
         }
+
+        impl From<$origin> for $name {
+            fn from(origin: $origin) -> Self {
+                Self(origin)
+            }
+        }
     };
 }
 
-new_type!(Armor, Equipment);
-new_type!(Artifact1, Equipment);
-new_type!(Artifact2, Equipment);
-new_type!(Artifact3, Equipment);
+new_type!(Equipment1, Equipment);
+new_type!(Equipment2, Equipment);
+new_type!(Equipment3, Equipment);
+new_type!(Equipment4, Equipment);

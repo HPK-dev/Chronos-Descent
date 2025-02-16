@@ -1,8 +1,7 @@
 use bevy_ecs::prelude::*;
 use enumset::{EnumSet, EnumSetType};
 use godot::obj::InstanceId;
-
-use super::CurrentStats;
+use uuid::Uuid;
 
 #[derive(Debug, strum::EnumString, strum::Display, EnumSetType)]
 pub enum DamageTag {
@@ -23,7 +22,7 @@ pub enum DamageTag {
 #[derive(Clone)]
 pub enum DamageSource {
     Realtime(InstanceId),
-    Snapshot(CurrentStats),
+    Snapshot(Uuid),
 }
 
 #[derive(Clone)]

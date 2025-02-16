@@ -14,7 +14,6 @@ use event::{
     UnregisterEntityEvent,
 };
 use godot::prelude::{gdextension, godot_api, Base, ExtensionLibrary, Gd, GodotClass, INode, Node};
-use resource::{GodotInstanceIdMap, GodotTimeDelta, GodotTimeScale};
 
 struct BattleSystemExtension;
 
@@ -45,9 +44,10 @@ impl INode for BattleSystem {
         let schedule = &mut self.schedule;
 
         // Setup systems
-        world.init_resource::<GodotTimeDelta>();
-        world.init_resource::<GodotTimeScale>();
-        world.init_resource::<GodotInstanceIdMap>();
+        world.init_resource::<resource::GodotTimeDelta>();
+        world.init_resource::<resource::GodotTimeScale>();
+        world.init_resource::<resource::GodotInstanceIdMap>();
+        world.init_resource::<resource::EntitySnapshotMap>();
 
         EventRegistry::register_event::<RegisterEntityEvent>(world);
         EventRegistry::register_event::<UnregisterEntityEvent>(world);
@@ -62,6 +62,7 @@ impl INode for BattleSystem {
 
         schedule.add_systems(event_update_system);
         schedule.add_systems(system::effect_timer_update);
+        schedule.add_systems(system::effects_changed_update);
     }
 
     fn physics_process(&mut self, delta: f64) {
@@ -69,7 +70,7 @@ impl INode for BattleSystem {
             return;
         }
 
-        self.world.resource_mut::<GodotTimeDelta>().0 = delta;
+        self.world.resource_mut::<resource::GodotTimeDelta>().0 = delta;
         self.schedule.run(&mut self.world);
     }
 }
@@ -91,6 +92,6 @@ impl BattleSystem {
 
     #[func]
     fn set_time_scale(&mut self, time_scale: f64) {
-        self.world.resource_mut::<GodotTimeScale>().0 = time_scale;
+        self.world.resource_mut::<resource::GodotTimeScale>().0 = time_scale;
     }
 }
