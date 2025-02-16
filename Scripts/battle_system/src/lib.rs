@@ -66,6 +66,7 @@ impl INode for BattleSystem {
         world.add_observer(system::apply_effect);
         world.add_observer(system::remove_effect);
         world.add_observer(system::remove_effects);
+        // world.add_observer(system::current_stats_update);
 
         schedule
             .add_systems(event_update_system)

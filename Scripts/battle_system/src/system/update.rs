@@ -28,15 +28,25 @@ pub fn effect_timer_update(
 pub fn effects_changed_update(
     mut query: Query<(&BaseStats, &Effects, &mut CurrentStats), Changed<Effects>>,
 ) {
+    #[cfg(debug_assertions)]
+    godot_print!("Stats update!");
+
     for (base, effects, mut currents) in query.iter() {
         // TODO: Implement this
-        godot_print!("Stats update!")
     }
 }
 
-pub fn current_stats_update(query: Query<Entity, Changed<CurrentStats>>) {}
+pub fn current_stats_update(query: Query<Entity, Changed<CurrentStats>>) {
+    #[cfg(debug_assertions)]
+    godot_print!("Current stats update!");
+
+    todo!();
+}
 
 pub fn snapshot_ref_count_update(mut counter: ResMut<EntitySnapshotMap>, mut cmd: Commands) {
+    #[cfg(debug_assertions)]
+    godot_print!("Snapshot ref count update!");
+
     if counter.is_changed() {
         counter.retain(|_, (entity, count)| {
             if *count == 0 {

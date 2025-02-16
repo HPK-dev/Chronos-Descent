@@ -3,6 +3,7 @@ use bevy_ecs::{
     system::{Commands, Query, Res, ResMut},
 };
 use enumset::EnumSet;
+use godot::global::godot_print;
 use uuid::Uuid;
 
 use crate::{
@@ -75,7 +76,10 @@ fn calculate_raw_damage(
         eq4,
     }: CalculationRequiredComponent,
 ) -> f64 {
-    todo!()
+    #[cfg(debug_assertions)]
+    godot_print!("calculate_raw_damage");
+
+    todo!();
 }
 
 #[allow(clippy::too_many_arguments, unused_variables)]
@@ -91,7 +95,10 @@ fn calculate_damage_reduction(
         eq4,
     }: CalculationRequiredComponent,
 ) -> f64 {
-    todo!()
+    #[cfg(debug_assertions)]
+    godot_print!("calculate_damage_reduction");
+
+    todo!();
 }
 
 // ========================================================
@@ -109,6 +116,9 @@ pub fn take_damage(
         &Equipment4,
     )>,
 ) {
+    #[cfg(debug_assertions)]
+    godot_print!("take_damage");
+
     let (godot_instance_id, damage) = (trigger.event().0, trigger.event().1.clone());
 
     let Some(entity) = instance_map.get(&godot_instance_id) else {
@@ -191,6 +201,9 @@ pub fn apply_effect(
     index: Res<GodotInstanceIdMap>,
     mut query: Query<(&mut Effects, &mut EffectsTimer)>,
 ) {
+    #[cfg(debug_assertions)]
+    godot_print!("apply_effect");
+
     let (godot_instance_id, effect) = (trigger.event().0, trigger.event().1.clone());
 
     let Some(entity) = index.get(&godot_instance_id) else {
@@ -232,6 +245,9 @@ pub fn remove_effect(
     index: Res<GodotInstanceIdMap>,
     mut query: Query<(&mut Effects, &mut EffectsTimer)>,
 ) {
+    #[cfg(debug_assertions)]
+    godot_print!("remove_effect");
+
     let (godot_instance_id, effect_id) = (trigger.event().0, trigger.event().1);
 
     if let Some((mut effects, mut timer)) = index
@@ -247,6 +263,9 @@ pub fn remove_effects(
     index: Res<GodotInstanceIdMap>,
     mut query: Query<(&mut Effects, &mut EffectsTimer)>,
 ) {
+    #[cfg(debug_assertions)]
+    godot_print!("remove_effects");
+
     let (godot_instance_id, effect_ids) = (trigger.event().0, trigger.event().1.clone());
 
     if let Some((mut effects, mut timer)) = index
@@ -262,6 +281,9 @@ pub fn register_entity(
     mut cmd: Commands,
     mut index: ResMut<GodotInstanceIdMap>,
 ) {
+    #[cfg(debug_assertions)]
+    godot_print!("register_entity");
+
     let godot_instance_id = trigger.event().0;
     let entity = cmd.spawn(EntityBundle::from(godot_instance_id)).id();
     index.insert(godot_instance_id, entity);
@@ -272,6 +294,9 @@ pub fn unregister_entity(
     mut cmd: Commands,
     mut index: ResMut<GodotInstanceIdMap>,
 ) {
+    #[cfg(debug_assertions)]
+    godot_print!("unregister_entity");
+
     let godot_instance_id = trigger.event().0;
     if let Some(entity) = index.remove(&godot_instance_id) {
         cmd.entity(entity).despawn();
