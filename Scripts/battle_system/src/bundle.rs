@@ -12,23 +12,32 @@ pub struct EntityBundle {
     pub current_stats: CurrentStats,
     pub base_stats: BaseStats,
     pub weapon: Weapon,
-    pub armor: Equipment1,
-    pub artifact1: Equipment4,
-    pub artifact2: Equipment2,
-    pub artifact3: Equipment3,
+    pub equipment1: Equipment1,
+    pub equipment2: Equipment2,
+    pub equipment3: Equipment3,
+    pub equipment4: Equipment4,
+}
+
+impl Default for EntityBundle {
+    fn default() -> Self {
+        Self {
+            instance_id: GodotInstanceId(InstanceId::from_i64(i64::MIN)),
+            current_stats: CurrentStats::default(),
+            base_stats: BaseStats::default(),
+            weapon: Weapon::default(),
+            equipment1: Equipment1::default(),
+            equipment2: Equipment2::default(),
+            equipment3: Equipment3::default(),
+            equipment4: Equipment4::default(),
+        }
+    }
 }
 
 impl From<InstanceId> for EntityBundle {
     fn from(instance_id: InstanceId) -> Self {
         Self {
             instance_id: GodotInstanceId(instance_id),
-            current_stats: CurrentStats::default(),
-            base_stats: BaseStats::default(),
-            weapon: Weapon::default(),
-            armor: Equipment1::default(),
-            artifact1: Equipment4::default(),
-            artifact2: Equipment2::default(),
-            artifact3: Equipment3::default(),
+            ..Default::default()
         }
     }
 }

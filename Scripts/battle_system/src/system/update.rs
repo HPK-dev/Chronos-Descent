@@ -3,7 +3,7 @@ use godot::global::godot_print;
 
 use crate::{
     component::{BaseStats, CurrentStats, Effects, EffectsTimer},
-    resource::{GodotTimeDelta, GodotTimeScale},
+    resource::{EntitySnapshotMap, GodotTimeDelta, GodotTimeScale},
 };
 
 pub fn effect_timer_update(
@@ -25,7 +25,6 @@ pub fn effect_timer_update(
     }
 }
 
-#[allow(unused_variables)]
 pub fn effects_changed_update(
     mut query: Query<(&BaseStats, &Effects, &mut CurrentStats), Changed<Effects>>,
 ) {
@@ -36,3 +35,16 @@ pub fn effects_changed_update(
 }
 
 pub fn current_stats_update(query: Query<Entity, Changed<CurrentStats>>) {}
+
+pub fn snapshot_ref_count_update(mut counter: ResMut<EntitySnapshotMap>, mut cmd: Commands) {
+    if counter.is_changed() {
+        counter.retain(|_, (entity, count)| {
+            if *count == 0 {
+                cmd.entity(*entity).despawn();
+                false
+            } else {
+                true
+            }
+        });
+    }
+}

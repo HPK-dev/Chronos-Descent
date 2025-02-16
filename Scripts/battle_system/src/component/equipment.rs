@@ -6,10 +6,10 @@ use std::ops::{Deref, DerefMut};
 #[derive(strum::EnumString, strum::Display, EnumSetType)]
 pub enum EquipmentTag {}
 
-#[derive(strum::EnumString, strum::Display)]
+#[derive(strum::EnumString, strum::Display, Clone)]
 pub enum EquipmentStats {}
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct Equipment {
     pub stats: FxHashSet<EquipmentStats>,
     pub perks: EnumSet<EquipmentTag>,
@@ -17,7 +17,7 @@ pub struct Equipment {
 
 macro_rules! new_type {
     ($name:ident, $origin:ident) => {
-        #[derive(Component)]
+        #[derive(Component, Clone)]
         pub struct $name(pub $origin);
 
         impl Deref for $name {

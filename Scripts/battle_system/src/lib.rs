@@ -5,6 +5,9 @@ pub mod node;
 pub mod resource;
 pub mod system;
 
+use crate::bundle::EntityBundle;
+use crate::component::{CurrentStats, Equipment1, Equipment2, Equipment3, Equipment4, Weapon};
+use crate::resource::{EntitySnapshotMap, GodotInstanceIdMap};
 use bevy_ecs::{
     event::{event_update_system, EventRegistry},
     prelude::*,
@@ -13,7 +16,11 @@ use event::{
     ApplyEffectEvent, RegisterEntityEvent, RemoveEffectEvent, RemoveEffectsEvent, TakeDamageEvent,
     UnregisterEntityEvent,
 };
-use godot::prelude::{gdextension, godot_api, Base, ExtensionLibrary, Gd, GodotClass, INode, Node};
+use godot::{
+    obj::InstanceId,
+    prelude::{gdextension, godot_api, Base, ExtensionLibrary, Gd, GodotClass, INode, Node},
+};
+use uuid::Uuid;
 
 struct BattleSystemExtension;
 
@@ -60,9 +67,11 @@ impl INode for BattleSystem {
         world.add_observer(system::remove_effect);
         world.add_observer(system::remove_effects);
 
-        schedule.add_systems(event_update_system);
-        schedule.add_systems(system::effect_timer_update);
-        schedule.add_systems(system::effects_changed_update);
+        schedule
+            .add_systems(event_update_system)
+            .add_systems(system::effect_timer_update)
+            .add_systems(system::effects_changed_update)
+            .add_systems(system::snapshot_ref_count_update);
     }
 
     fn physics_process(&mut self, delta: f64) {
@@ -93,5 +102,44 @@ impl BattleSystem {
     #[func]
     fn set_time_scale(&mut self, time_scale: f64) {
         self.world.resource_mut::<resource::GodotTimeScale>().0 = time_scale;
+    }
+}
+
+impl BattleSystem {
+    pub fn new_snapshot(&mut self, instance_id: &InstanceId, ref_count: usize) -> Option<Uuid> {
+        let origin_entity = {
+            let instance_map = self.world.resource::<GodotInstanceIdMap>();
+            instance_map.get(instance_id).copied()?
+        };
+
+        let (stats, weapon, eq1, eq2, eq3, eq4) = {
+            let mut query = self.world.query::<(
+                &CurrentStats,
+                &Weapon,
+                &Equipment1,
+                &Equipment2,
+                &Equipment3,
+                &Equipment4,
+            )>();
+            query.get(&self.world, origin_entity).unwrap()
+        };
+
+        // Create the bundle outside of any borrows
+        let copied_bundle = EntityBundle {
+            current_stats: stats.to_owned(),
+            weapon: weapon.clone(),
+            equipment1: eq1.clone(),
+            equipment2: eq2.clone(),
+            equipment3: eq3.clone(),
+            equipment4: eq4.clone(),
+            ..Default::default()
+        };
+
+        let copied_entity = self.world.spawn(copied_bundle).id();
+        let id = Uuid::new_v4();
+        let mut snapshot_map = self.world.resource_mut::<EntitySnapshotMap>();
+        snapshot_map.insert(id, (copied_entity, ref_count));
+
+        Some(id)
     }
 }

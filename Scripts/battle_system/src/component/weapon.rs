@@ -3,11 +3,12 @@ use bevy_ecs::prelude::*;
 use enumset::EnumSet;
 use rustc_hash::FxHashSet;
 
+#[derive(Clone)]
 pub enum Skill {
     None,
 }
 
-#[derive(Component)]
+#[derive(Component, Clone)]
 pub struct Weapon {
     pub stats: FxHashSet<EquipmentStats>,
     pub perks: EnumSet<EquipmentTag>,

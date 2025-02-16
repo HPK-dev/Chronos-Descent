@@ -18,7 +18,8 @@ use crate::{
     resource::{EntitySnapshotMap, GodotInstanceIdMap},
 };
 
-struct EquipmentSet<'a> {
+struct CalculationRequiredComponent<'a> {
+    stats: &'a CurrentStats,
     weapon: &'a Weapon,
     eq1: &'a Equipment1,
     eq2: &'a Equipment2,
@@ -28,15 +29,17 @@ struct EquipmentSet<'a> {
 
 impl<'a>
     From<(
+        &'a CurrentStats,
         &'a Weapon,
         &'a Equipment1,
         &'a Equipment2,
         &'a Equipment3,
         &'a Equipment4,
-    )> for EquipmentSet<'a>
+    )> for CalculationRequiredComponent<'a>
 {
     fn from(
-        (weapon, eq1, eq2, eq3, eq4): (
+        (stats, weapon, eq1, eq2, eq3, eq4): (
+            &'a CurrentStats,
             &'a Weapon,
             &'a Equipment1,
             &'a Equipment2,
@@ -45,6 +48,7 @@ impl<'a>
         ),
     ) -> Self {
         Self {
+            stats,
             weapon,
             eq1,
             eq2,
@@ -61,14 +65,15 @@ impl<'a>
 fn calculate_raw_damage(
     kind: &EnumSet<DamageTag>,
     base_amount: f64,
-    stats: &CurrentStats,
-    EquipmentSet {
+
+    CalculationRequiredComponent {
+        stats,
         weapon,
         eq1,
         eq2,
         eq3,
         eq4,
-    }: EquipmentSet,
+    }: CalculationRequiredComponent,
 ) -> f64 {
     todo!()
 }
@@ -77,14 +82,14 @@ fn calculate_raw_damage(
 fn calculate_damage_reduction(
     kind: &EnumSet<DamageTag>,
     base_amount: f64,
-    stats: &CurrentStats,
-    EquipmentSet {
+    CalculationRequiredComponent {
+        stats,
         weapon,
         eq1,
         eq2,
         eq3,
         eq4,
-    }: EquipmentSet,
+    }: CalculationRequiredComponent,
 ) -> f64 {
     todo!()
 }
@@ -114,7 +119,8 @@ pub fn take_damage(
         return;
     };
 
-    let attackee_equipment = EquipmentSet::from((
+    let attackee_equipment = CalculationRequiredComponent::from((
+        attackee_components.0,
         attackee_components.1,
         attackee_components.2,
         attackee_components.3,
@@ -160,7 +166,8 @@ pub fn take_damage(
     );
 
     let attacker_components = attacker_components.unwrap_or(default_components);
-    let attacker_equipment = EquipmentSet::from((
+    let attacker_equipment = CalculationRequiredComponent::from((
+        attacker_components.0,
         attacker_components.1,
         attacker_components.2,
         attacker_components.3,
@@ -169,19 +176,10 @@ pub fn take_damage(
     ));
 
     // Calculate damage
-    let raw_damage = calculate_raw_damage(
-        &damage.kind,
-        damage.base_amount,
-        attacker_components.0,
-        attacker_equipment,
-    );
+    let raw_damage = calculate_raw_damage(&damage.kind, damage.base_amount, attacker_equipment);
 
-    let damage_reduction = calculate_damage_reduction(
-        &damage.kind,
-        damage.base_amount,
-        attackee_components.0,
-        attackee_equipment,
-    );
+    let damage_reduction =
+        calculate_damage_reduction(&damage.kind, damage.base_amount, attackee_equipment);
 
     if let Ok(mut attackee) = query.get_mut(*entity) {
         attackee.0.health -= raw_damage * damage_reduction;
