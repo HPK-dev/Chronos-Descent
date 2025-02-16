@@ -2,12 +2,13 @@ use bevy_ecs::{
     observer::Trigger,
     system::{Commands, Query, Res, ResMut},
 };
+use enumset::EnumSet;
 use uuid::Uuid;
 
 use crate::{
     bundle::EntityBundle,
     component::{
-        CurrentStats, Damage, DamageSource, Effect, EffectDuration, Effects, EffectsTimer,
+        CurrentStats, Damage, DamageSource, DamageTag, EffectDuration, Effects, EffectsTimer,
     },
     event::{
         ApplyEffectEvent, RegisterEntityEvent, RemoveEffectEvent, RemoveEffectsEvent,
@@ -16,16 +17,32 @@ use crate::{
     resource::GodotInstanceIdMap,
 };
 
+// ========================| TODO |========================
+
+fn calculate_raw_damage(kind: &EnumSet<DamageTag>, base_amount: f64, stats: &CurrentStats) -> f64 {
+    todo!()
+}
+
+fn calculate_damage_reduction(
+    kind: &EnumSet<DamageTag>,
+    base_amount: f64,
+    stats: &CurrentStats,
+) -> f64 {
+    todo!()
+}
+
+// ========================================================
+
 pub fn take_damage(
     trigger: Trigger<TakeDamageEvent>,
     index: Res<GodotInstanceIdMap>,
-    mut query: Query<&mut CurrentStats>,
+    mut query: Query<(&mut CurrentStats)>,
 ) {
     let godot_instance_id = trigger.event().0;
 
-    let Some(mut attackee_stats) = index
+    let Some(attackee_stats) = index
         .get(&godot_instance_id)
-        .and_then(|entity| query.get_mut(*entity).ok())
+        .and_then(|entity| query.get(*entity).ok())
     else {
         return;
     };
@@ -36,41 +53,33 @@ pub fn take_damage(
         source,
     } = trigger.event().1.clone();
 
-    let attacker_stats = match source {
-        DamageSource::Realtime(id) => index
-            .get(&id)
-            .and_then(|entity| query.get(*entity).ok())
-            .cloned(),
-        DamageSource::Snapshot(stats) => Some(stats),
-    };
-
     // +--------------------------------------------------------------+
     // |                  Start calculating damage                    |
     // +--------------------------------------------------------------+
 
-    let damage = if let Some(attacker_stats) = attacker_stats {
-        // ============ Calculate base damage ============
-        let base_damage: f64 = todo!();
+    let raw_damage = match source {
+        DamageSource::Realtime(id) => {
+            let default_stats = CurrentStats::default();
+            let stats: &CurrentStats = index
+                .get(&id)
+                .and_then(|entity| query.get(*entity).ok())
+                .unwrap_or(&default_stats);
 
-        // ============ Calculate crit damage ============
-        let crit_damage: f64 = todo!();
-
-        // ============ Apply modifiers ============
-        (base_damage * crit_damage * attacker_stats.multiplicative_multiplier
-            + attacker_stats.additive_multiplier)
-            * attacker_stats.bouns_multiplier
-    } else {
-        base_amount
+            calculate_raw_damage(&kind, base_amount, stats)
+        }
+        DamageSource::Snapshot(stats) => calculate_raw_damage(&kind, base_amount, &stats),
     };
 
-    // ============ Calculate damage reduction ============
-    let damage_reduction: f64 = todo!();
+    let damage_reduction = calculate_damage_reduction(&kind, base_amount, attackee_stats);
 
-    // ============ Calculate final damage ============
-    let final_damage = damage * damage_reduction;
+    // ======= Apply damage =======
+    // Reborrow a mutable reference to the attackee's stats
+    let mut attackee_stats = index
+        .get(&godot_instance_id)
+        .and_then(|entity| query.get_mut(*entity).ok())
+        .unwrap();
 
-    // ============ Apply damage ============
-    attackee_stats.health -= final_damage;
+    attackee_stats.health -= raw_damage * damage_reduction;
 }
 
 pub fn apply_effect(
@@ -139,8 +148,8 @@ pub fn remove_effects(
     };
 
     efts.iter().for_each(|effect_id| {
-        timer.remove(&effect_id);
-        effects.remove(&effect_id);
+        timer.remove(effect_id);
+        effects.remove(effect_id);
     });
 }
 
