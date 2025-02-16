@@ -7,7 +7,7 @@ pub mod system;
 
 use crate::bundle::EntityBundle;
 use crate::component::{CurrentStats, Equipment1, Equipment2, Equipment3, Equipment4, Weapon};
-use crate::resource::{EntitySnapshotMap, GodotInstanceIdMap};
+use crate::resource::{EntitySnapshotMap, GodotInstanceIdMap, GodotTimeDelta, GodotTimeScale};
 use bevy_ecs::{
     event::{event_update_system, EventRegistry},
     prelude::*,
@@ -42,6 +42,15 @@ impl INode for BattleSystem {
         Self { world, schedule }
     }
 
+    fn physics_process(&mut self, delta: f64) {
+        if godot::classes::Engine::singleton().is_editor_hint() {
+            return;
+        }
+
+        self.world.resource_mut::<GodotTimeDelta>().0 = delta;
+        self.schedule.run(&mut self.world);
+    }
+
     fn ready(&mut self) {
         if godot::classes::Engine::singleton().is_editor_hint() {
             return;
@@ -51,10 +60,10 @@ impl INode for BattleSystem {
         let schedule = &mut self.schedule;
 
         // Setup systems
-        world.init_resource::<resource::GodotTimeDelta>();
-        world.init_resource::<resource::GodotTimeScale>();
-        world.init_resource::<resource::GodotInstanceIdMap>();
-        world.init_resource::<resource::EntitySnapshotMap>();
+        world.init_resource::<GodotTimeDelta>();
+        world.init_resource::<GodotTimeScale>();
+        world.init_resource::<GodotInstanceIdMap>();
+        world.init_resource::<EntitySnapshotMap>();
 
         EventRegistry::register_event::<RegisterEntityEvent>(world);
         EventRegistry::register_event::<UnregisterEntityEvent>(world);
@@ -74,15 +83,6 @@ impl INode for BattleSystem {
             .add_systems(system::effects_changed_update)
             .add_systems(system::snapshot_ref_count_update);
     }
-
-    fn physics_process(&mut self, delta: f64) {
-        if godot::classes::Engine::singleton().is_editor_hint() {
-            return;
-        }
-
-        self.world.resource_mut::<resource::GodotTimeDelta>().0 = delta;
-        self.schedule.run(&mut self.world);
-    }
 }
 
 #[godot_api]
@@ -97,12 +97,12 @@ impl BattleSystem {
     fn unregister_entity(&mut self, entity: Gd<node::Entity>) {
         let instance_id = entity.instance_id();
         self.world
-            .trigger(event::UnregisterEntityEvent(instance_id));
+            .trigger(UnregisterEntityEvent(instance_id));
     }
 
     #[func]
     fn set_time_scale(&mut self, time_scale: f64) {
-        self.world.resource_mut::<resource::GodotTimeScale>().0 = time_scale;
+        self.world.resource_mut::<GodotTimeScale>().0 = time_scale;
     }
 }
 
@@ -125,7 +125,6 @@ impl BattleSystem {
             query.get(&self.world, origin_entity).unwrap()
         };
 
-        // Create the bundle outside of any borrows
         let copied_bundle = EntityBundle {
             current_stats: stats.to_owned(),
             weapon: weapon.clone(),
