@@ -62,7 +62,7 @@ pub enum EffectTag {
     Silence,
     /// Entity cannot regenerate health or mana
     Drain,
-    ///
+    /// Reduce vision range
     Blind,
     /// Force entity to move towards to the caster
     Charm,
