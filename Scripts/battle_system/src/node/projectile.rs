@@ -1,7 +1,8 @@
 use super::entity::Entity;
 use crate::component::{Damage, DamageSource, DamageTag};
 use crate::event::TakeDamageEvent;
-use crate::{get_battle_system_singleton, BattleSystem};
+use crate::get_battle_system_singleton;
+use crate::resource::EntitySnapshotMap;
 use enumset::{EnumSet, EnumSetType};
 use godot::classes::Area2D;
 use godot::classes::IArea2D;
@@ -28,7 +29,7 @@ impl Default for ProjectileTarget {
 #[class(no_init, base=Area2D)]
 pub struct Projectile {
     pub kind: EnumSet<ProjectileTag>,
-    pub damage: Damage,
+    pub damage: Option<Damage>,
     pub target: ProjectileTarget,
     pub base: Base<Area2D>,
 }
@@ -37,7 +38,7 @@ pub struct ProjectileBuilder {
     projectile_kind: EnumSet<ProjectileTag>,
     target: ProjectileTarget,
     damage_kind: EnumSet<DamageTag>,
-    base_damage: f64,
+    base_damage: Option<f64>,
     snapshot: bool,
     amount: usize,
 }
@@ -48,7 +49,7 @@ impl Default for ProjectileBuilder {
             projectile_kind: EnumSet::new(),
             target: ProjectileTarget::default(),
             damage_kind: EnumSet::new(),
-            base_damage: 0.0,
+            base_damage: None,
             snapshot: false,
             amount: 1,
         }
@@ -71,7 +72,7 @@ impl ProjectileBuilder {
     }
 
     pub fn set_damage(mut self, value: f64) -> Self {
-        self.base_damage = value;
+        self.base_damage = Some(value);
         self
     }
 
@@ -132,11 +133,11 @@ impl ProjectileBuilder {
 
         // Create the projectile if we have a valid damage source
         damage_source.map(|source| {
-            let damage = Damage {
+            let damage = self.base_damage.map(|base_amount| Damage {
                 kind: self.damage_kind,
-                base_amount: self.base_damage,
+                base_amount,
                 source,
-            };
+            });
 
             Gd::from_init_fn(|base| Projectile {
                 kind: self.projectile_kind,
@@ -156,7 +157,7 @@ impl IArea2D for Projectile {
         let velocity: Vector2 = match &mut self.target {
             ProjectileTarget::EntityFixedSpeed { target, speed } => {
                 let target = target.get_global_position();
-                let direction = current.try_direction_to(target).unwrap_or_default();
+                let direction = current.direction_to(target);
                 direction * *speed as f32 * delta as f32
             }
             ProjectileTarget::EntityFixedTime { target, time } => {
@@ -169,9 +170,7 @@ impl IArea2D for Projectile {
 
                 let target = target.get_global_position();
                 let distance = target - current;
-                let v = distance / *time as f32 * delta as f32;
-
-                v
+                distance / *time as f32 * delta as f32
             }
             ProjectileTarget::Velocity(velocity) => *velocity * delta as f32,
         };
@@ -180,25 +179,41 @@ impl IArea2D for Projectile {
     }
 }
 
-// WIP
 #[godot_api]
 impl Projectile {
     #[func]
     fn body_entered(&mut self, body: Gd<Node2D>) {
-        match body.try_cast::<Entity>() {
-            Ok(hitted_entity) => {
-                let event = TakeDamageEvent(hitted_entity.instance_id(), self.damage.clone());
-                self.queue_free();
+        if let Ok(hitted_entity) = body.try_cast::<Entity>() {
+            if let Some(damage) = self.damage.take() {
+                let event = TakeDamageEvent(hitted_entity.instance_id(), damage);
+                let mut battle_system = get_battle_system_singleton();
+                let mut battle_system = battle_system.bind_mut();
+
+                battle_system.world.trigger(event);
             }
-            Err(origin) => {}
         }
+
+        self.queue_free();
     }
 }
 
-// WIP
 impl Projectile {
     fn queue_free(&mut self) {
         // Check is need to update snapshot ref counter
+        if let Some(damage) = &self.damage {
+            if let DamageSource::Snapshot(id) = damage.source {
+                let mut battle_system = get_battle_system_singleton();
+                let mut battle_system = battle_system.bind_mut();
+                let mut snapshot_map = battle_system
+                    .world
+                    .get_resource_mut::<EntitySnapshotMap>()
+                    .unwrap();
+
+                if let Some((_, ref_count)) = snapshot_map.get_mut(&id) {
+                    *ref_count -= 1
+                }
+            }
+        }
 
         self.base_mut().queue_free();
     }

@@ -63,8 +63,8 @@ unsafe impl ExtensionLibrary for BattleSystemExtension {
 #[derive(GodotClass)]
 #[class(no_init,base=Node)]
 pub struct BattleSystem {
-    world: World,
-    schedule: Schedule,
+    pub world: World,
+    pub schedule: Schedule,
 }
 
 impl BattleSystem {
