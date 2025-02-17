@@ -20,6 +20,7 @@ use godot::{
     obj::InstanceId,
     prelude::{gdextension, godot_api, Base, ExtensionLibrary, Gd, GodotClass, INode, Node},
 };
+use godot::global::godot_print;
 use uuid::Uuid;
 
 struct BattleSystemExtension;
@@ -91,6 +92,7 @@ impl BattleSystem {
     fn register_entity(&mut self, entity: Gd<node::Entity>) {
         let instance_id = entity.instance_id();
         self.world.trigger(RegisterEntityEvent(instance_id));
+        godot_print!("Register entity: {:?}", instance_id);
     }
 
     #[func]
@@ -98,6 +100,7 @@ impl BattleSystem {
         let instance_id = entity.instance_id();
         self.world
             .trigger(UnregisterEntityEvent(instance_id));
+        godot_print!("Unregister entity: {:?}", instance_id);
     }
 
     #[func]
