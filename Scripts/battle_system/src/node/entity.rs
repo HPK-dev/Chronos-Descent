@@ -22,3 +22,24 @@ impl ICharacterBody2D for Entity {
         battle_system.bind_mut().register_entity(instance_id);
     }
 }
+
+#[godot_api]
+impl Entity {
+    #[func]
+    pub fn cleanup(&mut self) {
+        todo!(
+            "
+        Setup cleanup sequences. Using Animation...?
+        Reference:
+        https://youtu.be/LOhfqjmasi0?si=6roZK8gXOKNhsNRT&t=4255
+        "
+        )
+    }
+}
+
+/* TODO:
+    - shoot projectile    
+    - entity selector
+    - damage indicator
+    - pathfinding
+*/

@@ -235,6 +235,5 @@ impl Projectile {
 }
 
 /* TODO:
-   - impl entity selector
-   - impl damage indicator
-*/
+    - Build projectiles direct in Rust code. (use a Enum to store it)
+ */
