@@ -24,56 +24,114 @@ pub enum EffectTag {
 
     /// Reduces incoming damage.
     Resistant,
-    /// Absorb incoming damage of specific types
+    /// Absorb incoming damage of specific types.
     Absorb,
-    /// Increase max health
+    /// Increase max health.
     HealthBoost,
-    /// Speed up skill cooldowns
+    /// Increase max mana.
+    ManaBoost,
+    /// Speed up skill cooldowns.
     CooldownReduction,
 
-    /// Increase movement speed
+    /// Increase movement speed.
     Speed,
-    /// Decrease movement speed
+    /// Decrease movement speed.
     Slow,
-    /// Increase attack speed
+    /// Increase attack speed.
     Haste,
-    /// Decrease attack speed
+    /// Decrease attack speed.
     Cripple,
 
-    /// Damage over time
+    /// Damage over time.
     DoT,
+    /// Life steal: recover health based on damage dealt.
+    LifeSteal,
+    /// Mana steal: recover mana based on damage dealt.
+    ManaSteal,
+    /// Convert part of damage dealt into health.
+    LifeConversion,
+    /// Damage is absorbed by mana before affecting health.
+    ManaShield,
+    /// Gain a shield that absorbs damage.
+    Shield,
+    /// Reflect a percentage of received damage.
+    ReflectDamage,
+    /// Chance to resist negative effects.
+    DebuffResistance,
+    /// Chance to evade attacks.
+    Evasion,
+    /// Completely invulnerable for a duration.
+    Invulnerable,
+    /// Immune to crowd control effects.
+    CCImmunity,
+    /// Chance to block an attack entirely.
+    Block,
 
     // == Crowd Control ==
-    /// Entity cannot be affected by negative effects and damage
+    /// Entity cannot be affected by negative effects and damage.
     Invincible,
-    /// Entity immune to specific damage types
+    /// Entity immune to specific damage types.
     Immune,
-    /// Entity cannot move, attack, or use abilities
+    /// Entity cannot move, attack, or use abilities.
     Stun,
-    /// Entity cannot move
+    /// Entity cannot move.
     Freeze,
-    /// Entity cannot heal itself and take damage for a period of time
+    /// Entity cannot move or attack; takes true damage when effect ends.
+    DeepFreeze,
+    /// Entity cannot heal itself and takes damage over time.
     Burn,
-    /// Entity move slowly and take damage for a period of time
+    /// Entity moves slowly and takes damage over time.
     Poison,
-    /// Entity cannot attack
+    /// Entity cannot attack.
     Disarm,
-    /// Entity cannot use abilities
+    /// Entity cannot use abilities.
     Silence,
-    /// Entity cannot regenerate health or mana
+    /// Entity cannot regenerate health or mana.
     Drain,
-    /// Reduce vision range
+    /// Reduce vision range.
     Blind,
-    /// Force entity to move towards to the caster
+    /// Force entity to move towards the caster.
     Charm,
-    /// Force entity to move away from the caster
+    /// Force entity to move away from the caster.
     Fear,
-    /// Force entity to attack the caster
+    /// Force entity to attack the caster.
     Taunt,
-    /// Entity cannot be targeted and can go through other entities
+    /// Entity moves slowly and defense is reduced over time.
+    Corrosion,
+    /// Entity takes damage when casting skills.
+    Backlash,
+    /// Entity cannot heal.
+    HealBlock,
+    /// Entity takes additional health damage when using mana.
+    AntiMagic,
+    /// Entity takes increased damage and deals reduced damage.
+    Curse,
+    /// Healing effects are reversed into damage.
+    ReverseHealing,
+    /// Entity is briefly controlled by an enemy.
+    MindControl,
+    /// Entity loses dodge and block chance.
+    Unstable,
+    /// Entity takes longer to respawn after death.
+    WeakSoul,
+    /// Entity size is altered, affecting hitbox and collision.
+    SizeChange,
+    /// Entity takes damage when effect expires.
+    Doom,
+    /// Entity is linked to others, sharing received damage.
+    SoulLink,
+    /// Entity takes damage when attacked but effect ends upon hit.
+    Daze,
+    /// Entity cannot move but can attack or cast spells.
+    Root,
+    /// Entity takes damage every few seconds and spawns enemies nearby.
+    Plague,
+
+    /// Allows entity to phase through other entities but remains targetable.
     Ghost,
-    /// Entity cannot be targeted
-    Invisibile,
+    /// Entity becomes untargetable (cannot be auto-selected) but remains physically collidable.
+    Invisible,
+
 }
 
 #[derive(Debug, Clone)]
