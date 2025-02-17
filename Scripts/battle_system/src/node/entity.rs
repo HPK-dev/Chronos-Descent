@@ -1,4 +1,4 @@
-use crate::BattleSystem;
+use crate::get_battle_system_singleton;
 use godot::classes::{CharacterBody2D, ICharacterBody2D};
 use godot::prelude::*;
 
@@ -15,9 +15,8 @@ impl ICharacterBody2D for Entity {
     }
 
     fn ready(&mut self) {
-        let mut base = self.base_mut();
-        let mut battle_system = base.get_node_as::<BattleSystem>("%BattleSystem");
-        let mut bind = battle_system.bind_mut();
-        bind.register_entity_with_instance_id(base.instance_id());
+         get_battle_system_singleton()
+            .bind_mut()
+            .register_entity_with_instance_id(self.base().instance_id());
     }
 }

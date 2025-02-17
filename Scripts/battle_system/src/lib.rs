@@ -16,33 +16,67 @@ use event::{
     ApplyEffectEvent, RegisterEntityEvent, RemoveEffectEvent, RemoveEffectsEvent, TakeDamageEvent,
     UnregisterEntityEvent,
 };
-use godot::global::godot_print;
+
 use godot::{
+    classes::Engine,
+    global::godot_print,
+    global::godot_print_rich,
+    init::InitLevel,
     obj::InstanceId,
-    prelude::{gdextension, godot_api, Base, ExtensionLibrary, Gd, GodotClass, INode, Node},
+    prelude::{gdextension, godot_api, ExtensionLibrary, Gd, GodotClass, INode},
 };
 use uuid::Uuid;
+
+pub const BATTLE_SYSTEM_SINGLETON_NAME: &'static str = "BattleSystemSingleton";
+pub fn get_battle_system_singleton() -> Gd<BattleSystem> {
+    if let Some(singleton) = Engine::singleton().get_singleton(BATTLE_SYSTEM_SINGLETON_NAME) {
+        return singleton.cast::<BattleSystem>();
+    }
+
+    panic!("WHY BATTLE SYSTEM HAS NOT GET REGISTERED YET!???")
+}
 
 struct BattleSystemExtension;
 
 #[gdextension]
-unsafe impl ExtensionLibrary for BattleSystemExtension {}
+unsafe impl ExtensionLibrary for BattleSystemExtension {
+    fn on_level_init(level: InitLevel) {
+        if level == InitLevel::Scene {
+            let mut engine = Engine::singleton();
+            engine.register_singleton(BATTLE_SYSTEM_SINGLETON_NAME, &BattleSystem::new());
+
+            godot_print_rich!(
+                r#"[font_size=30] Battle system singleton is registered! [/font_size]"#
+            );
+            godot_print!("");
+        }
+    }
+
+    fn on_level_deinit(level: InitLevel) {
+        if level == InitLevel::Scene {
+            let mut engine = Engine::singleton();
+            engine.unregister_singleton(BATTLE_SYSTEM_SINGLETON_NAME);
+        }
+    }
+}
 
 #[derive(GodotClass)]
-#[class(base=Node)]
+#[class(no_init,base=Node)]
 pub struct BattleSystem {
     world: World,
     schedule: Schedule,
 }
 
-#[godot_api]
-impl INode for BattleSystem {
-    fn init(_: Base<Node>) -> Self {
+impl BattleSystem {
+    fn new() -> Gd<Self> {
         let schedule = Schedule::default();
         let world = World::new();
-        Self { world, schedule }
+        Gd::from_init_fn(|_| Self { world, schedule })
     }
+}
 
+#[godot_api]
+impl INode for BattleSystem {
     fn physics_process(&mut self, delta: f64) {
         if godot::classes::Engine::singleton().is_editor_hint() {
             return;
@@ -89,19 +123,6 @@ impl INode for BattleSystem {
 #[godot_api]
 impl BattleSystem {
     #[func]
-    fn register_entity(&mut self, entity: Gd<node::Entity>) {
-        let instance_id = entity.instance_id();
-        self.world.trigger(RegisterEntityEvent(instance_id));
-        godot_print!("Register entity: {:?}", instance_id);
-    }
-
-    #[func]
-    fn register_entity_with_instance_id(&mut self, instance_id: InstanceId) {
-        self.world.trigger(RegisterEntityEvent(instance_id));
-        godot_print!("Register entity: {:?}", instance_id);
-    }
-
-    #[func]
     fn unregister_entity(&mut self, entity: Gd<node::Entity>) {
         let instance_id = entity.instance_id();
         self.world.trigger(UnregisterEntityEvent(instance_id));
@@ -115,6 +136,11 @@ impl BattleSystem {
 }
 
 impl BattleSystem {
+    pub fn register_entity_with_instance_id(&mut self, instance_id: InstanceId) {
+        self.world.trigger(RegisterEntityEvent(instance_id));
+        godot_print!("Register entity: {:?}", instance_id);
+    }
+
     pub fn new_snapshot(&mut self, instance_id: &InstanceId, ref_count: usize) -> Option<Uuid> {
         let origin_entity = {
             let instance_map = self.world.resource::<GodotInstanceIdMap>();

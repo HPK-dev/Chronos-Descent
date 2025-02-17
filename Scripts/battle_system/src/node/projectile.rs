@@ -1,11 +1,11 @@
 use super::entity::Entity;
 use crate::component::{Damage, DamageSource, DamageTag};
-use crate::BattleSystem;
+use crate::event::TakeDamageEvent;
+use crate::{get_battle_system_singleton, BattleSystem};
 use enumset::{EnumSet, EnumSetType};
 use godot::classes::Area2D;
 use godot::classes::IArea2D;
 use godot::prelude::*;
-use crate::event::TakeDamageEvent;
 
 #[derive(strum::EnumString, strum::Display, EnumSetType)]
 pub enum ProjectileTag {
@@ -122,8 +122,7 @@ impl ProjectileBuilder {
 
         // Create damage source
         let damage_source = if self.snapshot {
-            shooter
-                .get_node_as::<BattleSystem>("%BattleSystem")
+            get_battle_system_singleton()
                 .bind_mut()
                 .new_snapshot(&shooter_instance_id, self.amount)
                 .map(DamageSource::Snapshot)
@@ -157,7 +156,7 @@ impl IArea2D for Projectile {
         let velocity: Vector2 = match &mut self.target {
             ProjectileTarget::EntityFixedSpeed { target, speed } => {
                 let target = target.get_global_position();
-                let direction =  current.try_direction_to(target).unwrap_or_default();
+                let direction = current.try_direction_to(target).unwrap_or_default();
                 direction * *speed as f32 * delta as f32
             }
             ProjectileTarget::EntityFixedTime { target, time } => {
@@ -165,7 +164,7 @@ impl IArea2D for Projectile {
 
                 if *time <= 0.0 {
                     self.queue_free();
-                    return
+                    return;
                 }
 
                 let target = target.get_global_position();
@@ -200,7 +199,6 @@ impl Projectile {
 impl Projectile {
     fn queue_free(&mut self) {
         // Check is need to update snapshot ref counter
-
 
         self.base_mut().queue_free();
     }
