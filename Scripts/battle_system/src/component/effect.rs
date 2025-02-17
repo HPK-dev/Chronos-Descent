@@ -74,9 +74,9 @@ pub enum EffectTag {
     Immune,
     /// Entity cannot move, attack, or use abilities.
     Stun,
-    /// Entity cannot move.
+    /// Entity cannot move ; takes damage during the effect.
     Freeze,
-    /// Entity cannot move or attack; takes true damage when effect ends.
+    /// Entity cannot move or attack ; takes true damage when effect ends ; when take demage will end the effect.
     DeepFreeze,
     /// Entity cannot heal itself and takes damage over time.
     Burn,
@@ -86,7 +86,7 @@ pub enum EffectTag {
     Disarm,
     /// Entity cannot use abilities.
     Silence,
-    /// Entity cannot regenerate health or mana.
+    /// Entity cannot regenerate mana.
     Drain,
     /// Reduce vision range.
     Blind,
@@ -112,17 +112,13 @@ pub enum EffectTag {
     MindControl,
     /// Entity loses dodge and block chance.
     Unstable,
-    /// Entity takes longer to respawn after death.
-    WeakSoul,
     /// Entity size is altered, affecting hitbox and collision.
     SizeChange,
     /// Entity takes damage when effect expires.
     Doom,
-    /// Entity is linked to others, sharing received damage.
-    SoulLink,
     /// Entity takes damage when attacked but effect ends upon hit.
     Daze,
-    /// Entity cannot move but can attack or cast spells.
+    /// while entity move , lost mana and hp.
     Root,
     /// Entity takes damage every few seconds and spawns enemies nearby.
     Plague,
