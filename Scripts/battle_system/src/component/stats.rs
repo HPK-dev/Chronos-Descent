@@ -45,11 +45,6 @@ pub struct CurrentStats {
     pub attack_range: f64,   // units
     pub crit_chance: f64,    // percentage
     pub crit_damage: f64,    // percentage
-
-    // Multipliers
-    pub additive_multiplier: f64,       // percentage
-    pub multiplicative_multiplier: f64, // percentage
-    pub bouns_multiplier: f64,          // percentage
 }
 
 impl Default for CurrentStats {
@@ -67,9 +62,6 @@ impl Default for CurrentStats {
             attack_range: 4.0,
             crit_chance: 50.0,
             crit_damage: 100.0,
-            additive_multiplier: 0.0,
-            multiplicative_multiplier: 0.0,
-            bouns_multiplier: 0.0,
         }
     }
 }

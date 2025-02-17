@@ -186,9 +186,6 @@ impl ICharacterBody2D for Projectile {
     }
 }
 
-#[godot_api]
-impl Projectile {}
-
 impl Projectile {
     fn handle_collision(&mut self, body: Gd<Object>) {
         if let Ok(hit_entity) = body.try_cast::<Entity>() {
@@ -200,9 +197,9 @@ impl Projectile {
                 battle_system.world.trigger(event);
             }
         }
-
         self.queue_free();
     }
+    
     fn queue_free(&mut self) {
         // Check is need to update snapshot ref counter
         if let Some(damage) = &self.damage {
@@ -222,4 +219,13 @@ impl Projectile {
 
         self.base_mut().queue_free();
     }
+    
+    fn mount_image(&mut self, res_path: impl AsRef<String>) {
+        unimplemented!("Maybe we need this function to avoid create every scene for each projectile")
+    }
 }
+
+/* TODO:
+    - impl entity selector
+    - impl damage indicator
+ */
