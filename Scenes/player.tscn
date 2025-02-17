@@ -1,6 +1,7 @@
-[gd_scene load_steps=5 format=3 uid="uid://bvk05e0bvca3f"]
+[gd_scene load_steps=6 format=3 uid="uid://bvk05e0bvca3f"]
 
 [ext_resource type="Texture2D" uid="uid://dth75sipv1nfd" path="res://Assets/player.png" id="1_iuej4"]
+[ext_resource type="Script" path="res://Scripts/player.gd" id="1_y7w3j"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_5o6vp"]
 size = Vector2(254, 256)
@@ -21,6 +22,8 @@ animations = [{
 }]
 
 [node name="Player" type="Entity"]
+input_pickable = true
+script = ExtResource("1_y7w3j")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 position = Vector2(0, 1)
@@ -31,3 +34,6 @@ sprite_frames = SubResource("SpriteFrames_18dw8")
 animation = &"idle"
 autoplay = "idle"
 frame_progress = 0.991104
+
+[connection signal="mouse_entered" from="." to="." method="_on_mouse_entered"]
+[connection signal="mouse_exited" from="." to="." method="_on_mouse_exited"]
