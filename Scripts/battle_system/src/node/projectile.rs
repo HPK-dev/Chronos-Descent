@@ -1,8 +1,8 @@
 use super::entity::Entity;
 use crate::component::{Damage, DamageSource, DamageTag};
 use crate::event::TakeDamageEvent;
-use crate::get_battle_system_singleton;
 use crate::resource::EntitySnapshotMap;
+use crate::BattleSystem;
 use enumset::{EnumSet, EnumSetType};
 use godot::classes::{CharacterBody2D, ICharacterBody2D};
 use godot::prelude::*;
@@ -122,8 +122,10 @@ impl ProjectileBuilder {
 
         // Create damage source
         let damage_source = if self.snapshot {
-            get_battle_system_singleton()
-                .bind_mut()
+            let mut battle_system =
+                shooter.get_node_as::<BattleSystem>("/root/Autoload/BattleSystem");
+            let mut battle_system = battle_system.bind_mut();
+            battle_system
                 .new_snapshot(&shooter_instance_id, self.amount)
                 .map(DamageSource::Snapshot)
         } else {
@@ -191,7 +193,10 @@ impl Projectile {
         if let Ok(hit_entity) = body.try_cast::<Entity>() {
             if let Some(damage) = self.damage.take() {
                 let event = TakeDamageEvent(hit_entity.instance_id(), damage);
-                let mut battle_system = get_battle_system_singleton();
+
+                let base = self.base();
+                let mut battle_system =
+                    base.get_node_as::<BattleSystem>("/root/Autoload/BattleSystem");
                 let mut battle_system = battle_system.bind_mut();
 
                 battle_system.world.trigger(event);
@@ -199,12 +204,14 @@ impl Projectile {
         }
         self.queue_free();
     }
-    
+
     fn queue_free(&mut self) {
         // Check is need to update snapshot ref counter
         if let Some(damage) = &self.damage {
             if let DamageSource::Snapshot(id) = damage.source {
-                let mut battle_system = get_battle_system_singleton();
+                let base = self.base();
+                let mut battle_system =
+                    base.get_node_as::<BattleSystem>("/root/Autoload/BattleSystem");
                 let mut battle_system = battle_system.bind_mut();
                 let mut snapshot_map = battle_system
                     .world
@@ -219,13 +226,15 @@ impl Projectile {
 
         self.base_mut().queue_free();
     }
-    
+
     fn mount_image(&mut self, res_path: impl AsRef<String>) {
-        unimplemented!("Maybe we need this function to avoid create every scene for each projectile")
+        unimplemented!(
+            "Maybe we need this function to avoid create every scene for each projectile"
+        )
     }
 }
 
 /* TODO:
-    - impl entity selector
-    - impl damage indicator
- */
+   - impl entity selector
+   - impl damage indicator
+*/

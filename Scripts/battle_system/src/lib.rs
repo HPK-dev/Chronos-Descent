@@ -18,65 +18,35 @@ use event::{
 };
 
 use godot::{
-    classes::Engine,
-    global::godot_print,
-    global::godot_print_rich,
-    init::InitLevel,
-    obj::InstanceId,
-    prelude::{gdextension, godot_api, ExtensionLibrary, Gd, GodotClass, INode},
+    classes::{Engine, Node},
+    global::{godot_print, godot_print_rich},
+    obj::{Base, InstanceId},
+    prelude::{gdextension, godot_api, ExtensionLibrary, Gd, GodotClass, INode, Inherits},
 };
 use uuid::Uuid;
-
-pub const BATTLE_SYSTEM_SINGLETON_NAME: &'static str = "BattleSystemSingleton";
-pub fn get_battle_system_singleton() -> Gd<BattleSystem> {
-    if let Some(singleton) = Engine::singleton().get_singleton(BATTLE_SYSTEM_SINGLETON_NAME) {
-        return singleton.cast::<BattleSystem>();
-    }
-
-    panic!("WHY BATTLE SYSTEM HAS NOT GET REGISTERED YET!???")
-}
 
 struct BattleSystemExtension;
 
 #[gdextension]
-unsafe impl ExtensionLibrary for BattleSystemExtension {
-    fn on_level_init(level: InitLevel) {
-        if level == InitLevel::Scene {
-            let mut engine = Engine::singleton();
-            engine.register_singleton(BATTLE_SYSTEM_SINGLETON_NAME, &BattleSystem::new());
-
-            godot_print_rich!(
-                r#"[font_size=30] Battle system singleton is registered! [/font_size]"#
-            );
-            godot_print!("");
-        }
-    }
-
-    fn on_level_deinit(level: InitLevel) {
-        if level == InitLevel::Scene {
-            let mut engine = Engine::singleton();
-            engine.unregister_singleton(BATTLE_SYSTEM_SINGLETON_NAME);
-        }
-    }
-}
+unsafe impl ExtensionLibrary for BattleSystemExtension {}
 
 #[derive(GodotClass)]
-#[class(no_init,base=Node)]
+#[class(base=Node)]
 pub struct BattleSystem {
     pub world: World,
     pub schedule: Schedule,
 }
 
-impl BattleSystem {
-    fn new() -> Gd<Self> {
-        let schedule = Schedule::default();
-        let world = World::new();
-        Gd::from_init_fn(|_| Self { world, schedule })
-    }
-}
-
 #[godot_api]
 impl INode for BattleSystem {
+    fn init(_: Base<Self::Base>) -> Self {
+        godot_print_rich!(r#"[font_size=30] Battle system is initilized! [/font_size]"#);
+        let schedule = Schedule::default();
+        let world = World::new();
+
+        Self { world, schedule }
+    }
+
     fn physics_process(&mut self, delta: f64) {
         if Engine::singleton().is_editor_hint() {
             return;
@@ -122,8 +92,6 @@ impl INode for BattleSystem {
 
 #[godot_api]
 impl BattleSystem {
-    
-
     #[func]
     fn set_time_scale(&mut self, time_scale: f64) {
         self.world.resource_mut::<GodotTimeScale>().0 = time_scale;
@@ -136,7 +104,6 @@ impl BattleSystem {
         godot_print!("Register entity: {:?}", instance_id);
     }
 
-    
     pub fn unregister_entity(&mut self, instance_id: InstanceId) {
         self.world.trigger(UnregisterEntityEvent(instance_id));
         godot_print!("Unregister entity: {:?}", instance_id);
