@@ -1,4 +1,4 @@
-use bevy_ecs::prelude::*;
+use bevy_ecs::component::Component;
 use enumset::{EnumSet, EnumSetType};
 use godot::obj::InstanceId;
 use uuid::Uuid;
