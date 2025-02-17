@@ -5,11 +5,8 @@
 
 [node name="BattleScene" type="Node"]
 
-[node name="BattleSystem" type="BattleSystem" parent="."]
-unique_name_in_owner = true
-
 [node name="Player" parent="." instance=ExtResource("1_lger7")]
-position = Vector2(174, 466)
+position = Vector2(156, 472)
 
 [node name="TestEnemy" parent="." instance=ExtResource("1_qh21k")]
 position = Vector2(1018, 432)

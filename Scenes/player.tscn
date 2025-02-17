@@ -34,5 +34,3 @@ sprite_frames = SubResource("SpriteFrames_18dw8")
 animation = &"idle"
 autoplay = "idle"
 frame_progress = 0.991104
-
-[node name="Area2D" type="Area2D" parent="."]
