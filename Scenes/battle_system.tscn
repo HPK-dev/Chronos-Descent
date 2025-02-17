@@ -3,7 +3,10 @@
 [ext_resource type="PackedScene" uid="uid://bvk05e0bvca3f" path="res://Scenes/player.tscn" id="1_lger7"]
 [ext_resource type="PackedScene" uid="uid://7x2bupn6pu7g" path="res://Scenes/test_enemy.tscn" id="1_qh21k"]
 
-[node name="BattleSystem" type="BattleSystem"]
+[node name="BattleScene" type="Node"]
+
+[node name="BattleSystem" type="BattleSystem" parent="."]
+unique_name_in_owner = true
 
 [node name="Player" parent="." instance=ExtResource("1_lger7")]
 position = Vector2(174, 466)
