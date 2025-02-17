@@ -78,7 +78,7 @@ impl BattleSystem {
 #[godot_api]
 impl INode for BattleSystem {
     fn physics_process(&mut self, delta: f64) {
-        if godot::classes::Engine::singleton().is_editor_hint() {
+        if Engine::singleton().is_editor_hint() {
             return;
         }
 
@@ -122,12 +122,7 @@ impl INode for BattleSystem {
 
 #[godot_api]
 impl BattleSystem {
-    #[func]
-    fn unregister_entity(&mut self, entity: Gd<node::Entity>) {
-        let instance_id = entity.instance_id();
-        self.world.trigger(UnregisterEntityEvent(instance_id));
-        godot_print!("Unregister entity: {:?}", instance_id);
-    }
+    
 
     #[func]
     fn set_time_scale(&mut self, time_scale: f64) {
@@ -136,9 +131,15 @@ impl BattleSystem {
 }
 
 impl BattleSystem {
-    pub fn register_entity_with_instance_id(&mut self, instance_id: InstanceId) {
+    pub fn register_entity(&mut self, instance_id: InstanceId) {
         self.world.trigger(RegisterEntityEvent(instance_id));
         godot_print!("Register entity: {:?}", instance_id);
+    }
+
+    
+    pub fn unregister_entity(&mut self, instance_id: InstanceId) {
+        self.world.trigger(UnregisterEntityEvent(instance_id));
+        godot_print!("Unregister entity: {:?}", instance_id);
     }
 
     pub fn new_snapshot(&mut self, instance_id: &InstanceId, ref_count: usize) -> Option<Uuid> {

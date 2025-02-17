@@ -17,6 +17,6 @@ impl ICharacterBody2D for Entity {
     fn ready(&mut self) {
          get_battle_system_singleton()
             .bind_mut()
-            .register_entity_with_instance_id(self.base().instance_id());
+            .register_entity(self.base().instance_id());
     }
 }
