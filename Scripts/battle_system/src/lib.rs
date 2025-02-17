@@ -16,11 +16,11 @@ use event::{
     ApplyEffectEvent, RegisterEntityEvent, RemoveEffectEvent, RemoveEffectsEvent, TakeDamageEvent,
     UnregisterEntityEvent,
 };
+use godot::global::godot_print;
 use godot::{
     obj::InstanceId,
     prelude::{gdextension, godot_api, Base, ExtensionLibrary, Gd, GodotClass, INode, Node},
 };
-use godot::global::godot_print;
 use uuid::Uuid;
 
 struct BattleSystemExtension;
@@ -96,10 +96,15 @@ impl BattleSystem {
     }
 
     #[func]
+    fn register_entity_with_instance_id(&mut self, instance_id: InstanceId) {
+        self.world.trigger(RegisterEntityEvent(instance_id));
+        godot_print!("Register entity: {:?}", instance_id);
+    }
+
+    #[func]
     fn unregister_entity(&mut self, entity: Gd<node::Entity>) {
         let instance_id = entity.instance_id();
-        self.world
-            .trigger(UnregisterEntityEvent(instance_id));
+        self.world.trigger(UnregisterEntityEvent(instance_id));
         godot_print!("Unregister entity: {:?}", instance_id);
     }
 
