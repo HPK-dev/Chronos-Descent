@@ -4,8 +4,7 @@ use crate::event::TakeDamageEvent;
 use crate::get_battle_system_singleton;
 use crate::resource::EntitySnapshotMap;
 use enumset::{EnumSet, EnumSetType};
-use godot::classes::Area2D;
-use godot::classes::IArea2D;
+use godot::classes::{CharacterBody2D, ICharacterBody2D};
 use godot::prelude::*;
 
 #[derive(strum::EnumString, strum::Display, EnumSetType)]
@@ -26,12 +25,12 @@ impl Default for ProjectileTarget {
     }
 }
 #[derive(GodotClass)]
-#[class(no_init, base=Area2D)]
+#[class(no_init, base=CharacterBody2D)]
 pub struct Projectile {
     pub kind: EnumSet<ProjectileTag>,
     pub damage: Option<Damage>,
     pub target: ProjectileTarget,
-    pub base: Base<Area2D>,
+    pub base: Base<CharacterBody2D>,
 }
 
 pub struct ProjectileBuilder {
@@ -150,10 +149,11 @@ impl ProjectileBuilder {
 }
 
 #[godot_api]
-impl IArea2D for Projectile {
+impl ICharacterBody2D for Projectile {
     fn physics_process(&mut self, delta: f64) {
         let current = self.base().get_global_position();
 
+        // Update projectile's position
         let velocity: Vector2 = match &mut self.target {
             ProjectileTarget::EntityFixedSpeed { target, speed } => {
                 let target = target.get_global_position();
@@ -175,17 +175,25 @@ impl IArea2D for Projectile {
             ProjectileTarget::Velocity(velocity) => *velocity * delta as f32,
         };
 
-        self.base_mut().translate(velocity);
+        // Detect collision
+        let collision = self
+            .base_mut()
+            .move_and_collide(velocity)
+            .and_then(|collision| collision.get_collider());
+        if let Some(obj) = collision {
+            self.handle_collision(obj)
+        }
     }
 }
 
 #[godot_api]
+impl Projectile {}
+
 impl Projectile {
-    #[func]
-    fn body_entered(&mut self, body: Gd<Node2D>) {
-        if let Ok(hitted_entity) = body.try_cast::<Entity>() {
+    fn handle_collision(&mut self, body: Gd<Object>) {
+        if let Ok(hit_entity) = body.try_cast::<Entity>() {
             if let Some(damage) = self.damage.take() {
-                let event = TakeDamageEvent(hitted_entity.instance_id(), damage);
+                let event = TakeDamageEvent(hit_entity.instance_id(), damage);
                 let mut battle_system = get_battle_system_singleton();
                 let mut battle_system = battle_system.bind_mut();
 
@@ -195,9 +203,6 @@ impl Projectile {
 
         self.queue_free();
     }
-}
-
-impl Projectile {
     fn queue_free(&mut self) {
         // Check is need to update snapshot ref counter
         if let Some(damage) = &self.damage {
