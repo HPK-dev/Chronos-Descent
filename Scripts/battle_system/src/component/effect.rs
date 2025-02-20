@@ -1,193 +1,200 @@
+use crate::{define_mapping, unwrap_or};
 use bevy_ecs::prelude::*;
-use enumset::{EnumSet, EnumSetType};
+use godot::builtin::Vector2;
+use godot::obj::InstanceId;
 use rustc_hash::FxHashMap;
-use std::ops::{Deref, DerefMut};
-use strum::EnumString;
 use uuid::Uuid;
 
-use super::damage::DamageTag;
+define_mapping! {
 
-#[derive(Debug, EnumString, strum::Display, EnumSetType)]
-pub enum EffectTag {
-    // == Stats ==
-    /// Restores health over time.
-    HealthRegen,
-    /// Restores mana over time.
-    ManaRegen,
+    /// Runtime uuid -> remain duration + owner instance id
+    #[derive(Default, Resource)]
+    EffectsTimer => (FxHashMap<Uuid, (f32, InstanceId)>);
 
-    /// Increase damage dealt.
-    DamageBuff,
-    /// Increase chance to deal critical damage.
-    CritChanceBuff,
-    /// Increase damage dealt on critical hits.
-    CritDamageBuff,
+    /// Runtime uuid -> effect data
+    #[derive(Default, Component)]
+    ModifierEffects => (FxHashMap<Uuid, Vec<StatsModifyEffect>>);
 
-    /// Reduces incoming damage.
-    Resistant,
-    /// Absorb incoming damage of specific types.
-    Absorb,
-    /// Increase max health.
-    HealthBoost,
-    /// Increase max mana.
-    ManaBoost,
-    /// Speed up skill cooldowns.
-    CooldownReduction,
+    /// Runtime uuid -> effect data
+    #[derive(Default, Component)]
+    CrowdControlEffects => (FxHashMap<Uuid, Vec<CrowdControlEffect>>);
 
-    /// Increase movement speed.
-    Speed,
-    /// Decrease movement speed.
-    Slow,
-    /// Increase attack speed.
-    Haste,
-    /// Decrease attack speed.
-    Cripple,
+    /// Runtime uuid -> effects data
+    #[derive(Default, Component)]
+    TickEffects => (FxHashMap<Uuid, Vec<TickEffect>>);
 
-    /// Damage over time.
-    DoT,
-    /// Life steal: recover health based on damage dealt.
-    LifeSteal,
-    /// Mana steal: recover mana based on damage dealt.
-    ManaSteal,
-    /// Convert part of damage dealt into health.
-    LifeConversion,
-    /// Damage is absorbed by mana before affecting health.
-    ManaShield,
-    /// Gain a shield that absorbs damage.
-    Shield,
-    /// Reflect a percentage of received damage.
-    ReflectDamage,
-    /// Chance to resist negative effects.
-    DebuffResistance,
-    /// Chance to evade attacks.
-    Evasion,
-    /// Completely invulnerable for a duration.
-    Invulnerable,
-    /// Immune to crowd control effects.
-    CCImmunity,
-    /// Chance to block an attack entirely.
-    Block,
-
-    // == Crowd Control ==
-    /// Entity cannot be affected by negative effects and damage.
-    Invincible,
-    /// Entity immune to specific damage types.
-    Immune,
-    /// Entity cannot move, attack, or use abilities.
-    Stun,
-    /// Entity cannot move ; takes damage during the effect.
-    Freeze,
-    /// Entity cannot move or attack ; takes true damage when effect ends ; when take demage will end the effect.
-    DeepFreeze,
-    /// Entity cannot heal itself and takes damage over time.
-    Burn,
-    /// Entity moves slowly and takes damage over time.
-    Poison,
-    /// Entity cannot attack.
-    Disarm,
-    /// Entity cannot use abilities.
-    Silence,
-    /// Entity cannot regenerate mana.
-    Drain,
-    /// Reduce vision range.
-    Blind,
-    /// Force entity to move towards the caster.
-    Charm,
-    /// Force entity to move away from the caster.
-    Fear,
-    /// Force entity to attack the caster.
-    Taunt,
-    /// Entity moves slowly and defense is reduced over time.
-    Corrosion,
-    /// Entity takes damage when casting skills.
-    Backlash,
-    /// Entity cannot heal.
-    HealBlock,
-    /// Entity takes additional health damage when using mana.
-    AntiMagic,
-    /// Entity takes increased damage and deals reduced damage.
-    Curse,
-    /// Healing effects are reversed into damage.
-    ReverseHealing,
-    /// Entity is briefly controlled by an enemy.
-    MindControl,
-    /// Entity loses dodge and block chance.
-    Unstable,
-    /// Entity size is altered, affecting hitbox and collision.
-    SizeChange,
-    /// Entity takes damage when effect expires.
-    Doom,
-    /// Entity takes damage when attacked but effect ends upon hit.
-    Daze,
-    /// while entity move , lost mana and hp.
-    Root,
-    /// Entity takes damage every few seconds and spawns enemies nearby.
-    Plague,
-
-    /// Allows entity to phase through other entities but remains targetable.
-    Ghost,
-    /// Entity becomes untargetable (cannot be auto-selected) but remains physically collidable.
-    Invisible,
-
+    /// Runtime uuid -> effect metadata
+    #[derive(Default, Component)]
+    EffectsQueue => (FxHashMap<Uuid, EffectMetadata>);
 }
 
-#[derive(Debug, Clone)]
-pub enum EffectDuration {
-    Permanent,
-    Temporary(f64),
-    Instant,
-}
-
-impl From<f64> for EffectDuration {
-    fn from(duration: f64) -> Self {
-        if duration == 0.0 {
-            Self::Instant
-        } else if duration < 0.0 {
-            Self::Permanent
-        } else {
-            Self::Temporary(duration)
-        }
-    }
+pub trait GetEffectId {
+    fn get_effect_id(&self) -> String;
 }
 
 #[derive(Clone)]
+/// A bundle of many atomic effects
 pub struct Effect {
-    pub kind: EffectTag,
-    /// Used for effects that involve damage buff/debuff
-    pub damage_tags: EnumSet<DamageTag>,
-    pub amount: f64,
-    pub duration: EffectDuration,
+    /// Effect's unique id. Will be used in i18n.
+    pub id: &'static str,
+    /// Weather to show this effect on UI
+    pub visible: bool,
+
+    /// List of modifier effects
+    pub modifier: Vec<(StatsModifyEffect, f32)>,
+    /// List of crowd control effects
+    pub cc: Vec<(CrowdControlEffect, f32)>,
+    /// List of tick effects
+    pub tick: Vec<(TickEffect, f32)>,
 }
 
-#[derive(Component, Default)]
-pub struct Effects(pub FxHashMap<Uuid, Effect>);
+#[derive(Component)]
+pub struct EffectMetadata {
+    pub id: String,
+    pub visible: bool,
+}
 
-impl Deref for Effects {
-    type Target = FxHashMap<Uuid, Effect>;
+#[derive(Clone)]
+pub struct TickEffect {
+    pub kind: TickEffectKind,
+    pub interval: f32,
+    pub __interval_counter: f32,
+}
 
-    fn deref(&self) -> &Self::Target {
-        &self.0
+#[derive(strum::Display, Clone)]
+pub enum CrowdControlEffect {
+    CannotMove,
+    CannotAttack,
+    CannotUseSkill,
+    CannotBeHealed,
+    CannotBeDamaged,
+    CannotBeAffectedByPositiveEffect,
+    CannotBeAffectedByNegativeEffect,
+    CannotBeTargeted,
+    RestrictedSight, // This also affect target selector
+    DisableCollision,
+    DiscardInput,
+}
+
+#[derive(strum::Display, Clone)]
+pub enum StatsModifyEffect {
+    Damage(f32),
+    CritChance(f32),
+    CritDamage(f32),
+    Defense(f32),
+    AttackSpeed(f32),
+    MovementSpeed(f32),
+    MaxHealth(f32),
+    MaxMana(f32),
+    CooldownReduction(f32),
+    Absorption(f32),
+}
+
+#[derive(strum::Display, Clone)]
+pub enum TickEffectKind {
+    HealthRegen(f32),
+    ManaRegen(f32),
+    PhysicalDamage(f32),
+    MagicalDamage(f32),
+
+    DeferredEffect(Effect),
+    ForceMove(Vector2),
+}
+
+impl GetEffectId for TickEffect {
+    fn get_effect_id(&self) -> String {
+        self.kind.to_string()
     }
 }
 
-impl DerefMut for Effects {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
+impl GetEffectId for CrowdControlEffect {
+    fn get_effect_id(&self) -> String {
+        self.to_string()
     }
 }
 
-#[derive(Component, Default)]
-pub struct EffectsTimer(pub FxHashMap<Uuid, f64>);
-
-impl Deref for EffectsTimer {
-    type Target = FxHashMap<Uuid, f64>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
+impl GetEffectId for StatsModifyEffect {
+    fn get_effect_id(&self) -> String {
+        self.to_string()
     }
 }
 
-impl DerefMut for EffectsTimer {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
+macro_rules! define_effect {
+    (
+        $name:ident $([$id:literal])? $(($($arg:ident : $t:ty),+ $(,)?))? {
+            $(visible: $visible:expr ;)?
+            $(modifier: [ $(
+                $mod_kind:ident $(( $($mod_args:expr),+ ))?
+            ),* $(,)? ] ;)?
+            $(cc: [ $(
+                $cc_kind:ident
+            ),* $(,)? ] ;)?
+            $(tick: [ $(
+                $tick_kind:ident $(( $($tick_args:expr),+ ))? { $tick_interval: expr }
+            ),* $(,)? ] ;)?
+        }
+    ) => { paste::paste!{
+        #[allow(non_snake_case, unused_variables, clippy::redundant_field_names)]
+        pub fn [<$name:upper>](duration: f32, $($($arg:$t),+)? ) -> Effect { Effect {
+            id: unwrap_or!(stringify!( [<$name:lower>] ), $($id)? ),
+            visible: unwrap_or!(false, $($visible)?),
+
+            modifier:
+            ( vec![$( $(
+                (
+                    ModifierEffectKind::$mod_kind $(( $($mod_args ),+ ))?,
+                    duration
+                )
+            ),* )?] ),
+
+            cc:
+            ( vec![$( $(
+                ( CrowdControlEffect::$cc_kind, duration)
+            ),* )?] ),
+
+            tick:
+            vec![ $( $((
+                TickEffect {
+                    kind: TickEffectKind::$tick_kind $(( $($tick_args),+ ))?,
+                    interval: $tick_interval,
+                    __interval_counter: 0.0,
+                },
+                duration
+            )),* )?],
+        }}
+    }};
+}
+
+// ============= Define effects =============
+
+define_effect! {
+    invincible {
+        visible: true;
+        cc: [
+            CannotBeDamaged,
+            CannotBeAffectedByNegativeEffect
+        ];
+    }
+}
+
+define_effect! {
+    burn (damage: f32) {
+        visible: true;
+        cc: [ CannotBeHealed ];
+        tick: [
+            MagicalDamage(damage){1.0}
+        ];
+    }
+}
+
+define_effect! {
+    charm {
+        visible: true;
+        cc: [
+            CannotMove, DiscardInput
+        ];
+        tick: [
+            ForceMove (Vector2 { x: 1.0, y: 1.0 }) {1.0}
+        ];
     }
 }

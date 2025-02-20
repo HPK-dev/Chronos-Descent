@@ -1,35 +1,6 @@
 use bevy_ecs::prelude::*;
 
-#[derive(Component)]
-pub struct BaseStats {
-    pub health: f64,
-    pub mana: f64,
-    pub strength: f64,
-    pub intelligence: f64,
-    pub defense: f64,
-    pub attack_speed: f64,
-    pub movement_speed: f64,
-    pub attack_range: f64,
-    pub crit_chance: f64,
-    pub crit_damage: f64,
-}
-
-impl Default for BaseStats {
-    fn default() -> Self {
-        Self {
-            health: 100.0,
-            mana: 100.0,
-            strength: 10.0,
-            intelligence: 10.0,
-            defense: 10.0,
-            attack_speed: 1.0,
-            movement_speed: 1.0,
-            attack_range: 4.0,
-            crit_chance: 50.0,
-            crit_damage: 100.0,
-        }
-    }
-}
+// TODO: Maybe fetch base stats with some formula?
 
 #[derive(Component, Clone)]
 pub struct CurrentStats {

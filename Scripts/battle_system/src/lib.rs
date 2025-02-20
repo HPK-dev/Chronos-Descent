@@ -4,24 +4,28 @@ pub mod event;
 pub mod node;
 pub mod resource;
 pub mod system;
+pub mod utils;
 
-use crate::bundle::EntityBundle;
-use crate::component::{CurrentStats, Equipment1, Equipment2, Equipment3, Equipment4, Weapon};
+use crate::component::{
+    CurrentStats, EffectsTimer, Equipment1, Equipment2, Equipment3, Equipment4, ModifierEffects,
+    Weapon,
+};
 use crate::resource::{EntitySnapshotMap, GodotInstanceIdMap, GodotTimeDelta, GodotTimeScale};
 use bevy_ecs::{
     event::{event_update_system, EventRegistry},
     prelude::*,
 };
 use event::{
-    ApplyEffectEvent, RegisterEntityEvent, RemoveEffectEvent, RemoveEffectsEvent, TakeDamageEvent,
+    ApplyEffectEvent, RegisterEntityEvent, RemoveEffectEvent, TakeDamageEvent,
     UnregisterEntityEvent,
 };
 
+use crate::event::make_snapshot;
 use godot::{
-    classes::{Engine, Node},
+    classes::Engine,
     global::{godot_print, godot_print_rich},
     obj::{Base, InstanceId},
-    prelude::{gdextension, godot_api, ExtensionLibrary, Gd, GodotClass, INode, Inherits},
+    prelude::{gdextension, godot_api, ExtensionLibrary, GodotClass, INode},
 };
 use uuid::Uuid;
 
@@ -52,40 +56,37 @@ impl INode for BattleSystem {
             return;
         }
 
-        self.world.resource_mut::<GodotTimeDelta>().0 = delta;
+        self.world.resource_mut::<GodotTimeDelta>().0 = delta as f32;
         self.schedule.run(&mut self.world);
     }
 
     fn ready(&mut self) {
-        if godot::classes::Engine::singleton().is_editor_hint() {
+        if Engine::singleton().is_editor_hint() {
             return;
         }
 
         let world = &mut self.world;
         let schedule = &mut self.schedule;
 
-        // Setup systems
         world.init_resource::<GodotTimeDelta>();
         world.init_resource::<GodotTimeScale>();
         world.init_resource::<GodotInstanceIdMap>();
         world.init_resource::<EntitySnapshotMap>();
+        world.init_resource::<EffectsTimer>();
 
         EventRegistry::register_event::<RegisterEntityEvent>(world);
         EventRegistry::register_event::<UnregisterEntityEvent>(world);
         EventRegistry::register_event::<ApplyEffectEvent>(world);
         EventRegistry::register_event::<RemoveEffectEvent>(world);
-        EventRegistry::register_event::<RemoveEffectsEvent>(world);
         EventRegistry::register_event::<TakeDamageEvent>(world);
 
-        world.add_observer(system::apply_effect);
-        world.add_observer(system::remove_effect);
-        world.add_observer(system::remove_effects);
-        // world.add_observer(system::current_stats_update);
+        world.add_observer(event::apply_effect);
+        world.add_observer(event::remove_effect);
 
         schedule
             .add_systems(event_update_system)
             .add_systems(system::effect_timer_update)
-            .add_systems(system::effects_changed_update)
+            .add_systems(system::tick_effect_update)
             .add_systems(system::snapshot_ref_count_update);
     }
 }
@@ -94,7 +95,7 @@ impl INode for BattleSystem {
 impl BattleSystem {
     #[func]
     fn set_time_scale(&mut self, time_scale: f64) {
-        self.world.resource_mut::<GodotTimeScale>().0 = time_scale;
+        self.world.resource_mut::<GodotTimeScale>().0 = time_scale as f32;
     }
 }
 
@@ -115,7 +116,7 @@ impl BattleSystem {
             instance_map.get(instance_id).copied()?
         };
 
-        let (stats, weapon, eq1, eq2, eq3, eq4) = {
+        let components = {
             let mut query = self.world.query::<(
                 &CurrentStats,
                 &Weapon,
@@ -123,21 +124,13 @@ impl BattleSystem {
                 &Equipment2,
                 &Equipment3,
                 &Equipment4,
+                &ModifierEffects,
             )>();
             query.get(&self.world, origin_entity).unwrap()
         };
 
-        let copied_bundle = EntityBundle {
-            current_stats: stats.to_owned(),
-            weapon: weapon.clone(),
-            equipment1: eq1.clone(),
-            equipment2: eq2.clone(),
-            equipment3: eq3.clone(),
-            equipment4: eq4.clone(),
-            ..Default::default()
-        };
+        let copied_entity = make_snapshot(components);
 
-        let copied_entity = self.world.spawn(copied_bundle).id();
         let id = Uuid::new_v4();
         let mut snapshot_map = self.world.resource_mut::<EntitySnapshotMap>();
         snapshot_map.insert(id, (copied_entity, ref_count));

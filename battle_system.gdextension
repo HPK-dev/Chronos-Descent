@@ -6,8 +6,8 @@ reloadable = true
 [libraries]
 linux.debug.x86_64 =     "res://Scripts/battle_system/target/debug/libbattle_system.so"
 linux.release.x86_64 =   "res://Scripts/battle_system/target/release/libbattle_system.so"
-windows.debug.x86_64 =   "res://Scripts/battle_system/target/debug/rust_script.dll"
-windows.release.x86_64 = "res://Scripts/battle_system/target/release/rust_script.dll"
+windows.debug.x86_64 =   "res://Scripts/battle_system/target/debug/battle_system.dll"
+windows.release.x86_64 = "res://Scripts/battle_system/target/release/battle_system.dll"
 macos.debug =            "res://Scripts/battle_system/target/debug/libbattle_system.dylib"
 macos.release =          "res://Scripts/battle_system/target/release/libbattle_system.dylib"
 macos.debug.arm64 =      "res://Scripts/battle_system/target/debug/libbattle_system.dylib"

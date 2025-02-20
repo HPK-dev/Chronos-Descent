@@ -38,7 +38,7 @@ impl Entity {
 }
 
 /* TODO:
-    - shoot projectile    
+    - shoot projectile
     - entity selector
     - damage indicator
     - pathfinding

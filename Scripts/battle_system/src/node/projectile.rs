@@ -235,5 +235,5 @@ impl Projectile {
 }
 
 /* TODO:
-    - Build projectiles direct in Rust code. (use a Enum to store it)
- */
+   - Build projectiles direct in Rust code. (use a Enum to store it)
+*/

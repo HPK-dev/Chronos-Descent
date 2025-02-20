@@ -12,7 +12,7 @@ crate-type = ["cdylib"]
 bevy_ecs = "0.15.2"
 enumset = "1.1.5"
 godot = { version = "0.2.3", features = ["api-4-3"] }
-parking_lot = "0.12.3"
+paste = "1.0.15"
 rustc-hash = "2.1.1"
 strum = { version = "0.27", features = ["derive"] }
 uuid = { version = "1.12", features = ["v4"] }
