@@ -88,7 +88,7 @@ pub enum CrowdControlEffect {
     CannotBeAffectedByPositiveEffect,
     CannotBeAffectedByNegativeEffect,
     CannotBeTargeted,
-    RestrictedSight, // This also affect target selector
+    RestrictedSight, // This also affects target selector
     DisableCollision,
     DiscardInput,
 }
@@ -137,7 +137,7 @@ impl GetEffectId for StatsModifyEffect {
 }
 
 macro_rules! define_effect {
-    (
+    ($(
         $name:ident $([$id:literal])? $(($($arg:ident : $t:ty),+ $(,)?))? {
             $(visible: $visible:expr ;)?
             $(modifier: [ $(
@@ -150,35 +150,46 @@ macro_rules! define_effect {
                 $tick_kind:ident $(( $($tick_args:expr),+ ))? { $tick_interval: expr }
             ),* $(,)? ] ;)?
         }
-    ) => { paste::paste!{
-        #[allow(non_snake_case, unused_variables, clippy::redundant_field_names)]
-        pub fn [<$name:upper>](duration: f32, $($($arg:$t),+)? ) -> Effect { Effect {
-            id: unwrap_or!(stringify!( [<$name:lower>] ), $($id)? ),
-            visible: unwrap_or!(false, $($visible)?),
+    )*) => { paste::paste!{
 
-            modifier:
-            ( vec![$( $(
-                (
-                    ModifierEffectKind::$mod_kind $(( $($mod_args ),+ ))?,
-                    duration
-                )
-            ),* )?] ),
+        pub enum EffectVariants {
+            $([<$name:upper>]  { duration: f32, $($($arg:$t),+)? } ),*
+        }
 
-            cc:
-            ( vec![$( $(
-                ( CrowdControlEffect::$cc_kind, duration)
-            ),* )?] ),
+        impl From<EffectVariants> for Effect {
+            fn from(ev: EffectVariants) -> Self {
+                match ev { $(
+                EffectVariants:: [<$name:upper>]{ duration, $($($arg),+)? } => { Effect {
+                    id: unwrap_or!(stringify!( [<$name:lower>] ), $($id)? ),
+                    visible: unwrap_or!(false, $($visible)?),
 
-            tick:
-            vec![ $( $((
-                TickEffect {
-                    kind: TickEffectKind::$tick_kind $(( $($tick_args),+ ))?,
-                    interval: $tick_interval,
-                    __interval_counter: 0.0,
-                },
-                duration
-            )),* )?],
-        }}
+                    modifier:
+                    ( vec![$( $(
+                        (
+                            ModifierEffectKind::$mod_kind $(( $($mod_args ),+ ))?,
+                            duration
+                        )
+                    ),* )?] ),
+
+                    cc:
+                    ( vec![$( $(
+                        ( CrowdControlEffect::$cc_kind, duration)
+                    ),* )?] ),
+
+                    tick:
+                    vec![ $( $((
+                        TickEffect {
+                            kind: TickEffectKind::$tick_kind $(( $($tick_args),+ ))?,
+                            interval: $tick_interval,
+                            __interval_counter: 0.0,
+                        },
+                        duration
+                    )),* )?],
+
+                }}
+                )*}
+            }
+        }
     }};
 }
 
@@ -192,20 +203,16 @@ define_effect! {
             CannotBeAffectedByNegativeEffect
         ];
     }
-}
 
-define_effect! {
-    burn (damage: f32) {
+     burn (damage: f32) {
         visible: true;
         cc: [ CannotBeHealed ];
         tick: [
             MagicalDamage(damage){1.0}
         ];
     }
-}
 
-define_effect! {
-    charm {
+     charm {
         visible: true;
         cc: [
             CannotMove, DiscardInput
