@@ -87,7 +87,7 @@ impl INode for BattleSystem {
             .add_systems(event_update_system)
             .add_systems(system::effect_timer_update)
             .add_systems(system::tick_effect_update)
-            .add_systems(system::snapshot_ref_count_update);
+            .add_systems(system::snapshot_ref_decrease);
     }
 }
 
