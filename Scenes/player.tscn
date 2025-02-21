@@ -26,10 +26,13 @@ input_pickable = true
 script = ExtResource("1_y7w3j")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-position = Vector2(0, 1)
+position = Vector2(64, 64)
+scale = Vector2(0.5, 0.5)
 shape = SubResource("RectangleShape2D_5o6vp")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+position = Vector2(64, 64)
+scale = Vector2(0.489, 0.5)
 sprite_frames = SubResource("SpriteFrames_18dw8")
 animation = &"idle"
 autoplay = "idle"

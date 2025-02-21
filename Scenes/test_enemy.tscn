@@ -3,13 +3,16 @@
 [ext_resource type="Texture2D" uid="uid://67sy5mburojw" path="res://Assets/test_target.png" id="1_nhpg3"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_5o6vp"]
-size = Vector2(254, 256)
+size = Vector2(128, 128)
 
 [node name="TestEnemy" type="Entity"]
+position = Vector2(-64, -65)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-position = Vector2(0, 1)
+position = Vector2(64, 64)
 shape = SubResource("RectangleShape2D_5o6vp")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
+position = Vector2(64, 64)
+scale = Vector2(0.5, 0.5)
 texture = ExtResource("1_nhpg3")
