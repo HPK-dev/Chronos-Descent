@@ -14,12 +14,20 @@ impl ICharacterBody2D for Entity {
         Self { base }
     }
 
-    fn ready(&mut self) {
+    fn enter_tree(&mut self) {
         let base = self.base_mut();
         let instance_id = base.instance_id();
         let mut battle_system = base.get_node_as::<BattleSystem>("/root/Autoload/BattleSystem");
 
         battle_system.bind_mut().register_entity(instance_id);
+    }
+
+    fn exit_tree(&mut self) {
+        let base = self.base_mut();
+        let instance_id = base.instance_id();
+        let mut battle_system = base.get_node_as::<BattleSystem>("/root/Autoload/BattleSystem");
+
+        battle_system.bind_mut().unregister_entity(instance_id);
     }
 }
 

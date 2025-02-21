@@ -17,12 +17,13 @@ pub fn register_entity(
     mut cmd: Commands,
     mut index: ResMut<GodotInstanceIdMap>,
 ) {
-    #[cfg(debug_assertions)]
-    godot_print!("register_entity");
 
     let godot_instance_id = trigger.event().0;
     let entity = cmd.spawn(EntityBundle::from(godot_instance_id)).id();
     index.insert(godot_instance_id, entity);
+
+    #[cfg(debug_assertions)]
+    godot_print!("Register entity: {:?}", godot_instance_id);
 }
 
 pub fn unregister_entity(
@@ -37,4 +38,6 @@ pub fn unregister_entity(
     if let Some(entity) = index.remove(&godot_instance_id) {
         cmd.entity(entity).despawn();
     }
+
+    godot_print!("Unregister entity: {:?}", godot_instance_id);
 }
