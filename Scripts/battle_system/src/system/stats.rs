@@ -28,11 +28,6 @@ pub fn snapshot_ref_decrease(mut snapshot_map: ResMut<EntitySnapshotMap>) {
         #[cfg(debug_assertions)]
         godot_print!("Snapshot ref count update!");
 
-
-        snapshot_map.retain(|id, (_, count)| {
-            *count != 0
-        });
-
-      
+        snapshot_map.retain(|_, (_, count)| *count != 0);
     }
 }

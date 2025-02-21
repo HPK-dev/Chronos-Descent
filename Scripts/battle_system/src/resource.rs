@@ -5,12 +5,6 @@ use godot::obj::InstanceId;
 use rustc_hash::FxHashMap;
 use uuid::Uuid;
 
-impl Default for GodotTimeScale {
-    fn default() -> Self {
-        Self(1.0)
-    }
-}
-
 #[derive(Clone)]
 pub struct EntitySnapshot {
     pub stats: CurrentStats,
@@ -34,5 +28,10 @@ define_mapping! {
 
     #[derive(Resource, Default)]
     EntitySnapshotMap => (FxHashMap<Uuid, (EntitySnapshot, usize)>);
+}
 
+impl Default for GodotTimeScale {
+    fn default() -> Self {
+        Self(1.0)
+    }
 }
