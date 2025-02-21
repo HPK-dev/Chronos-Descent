@@ -1,5 +1,8 @@
-[gd_scene format=3 uid="uid://ct4pmcu3feiga"]
+[gd_scene load_steps=2 format=3 uid="uid://ct4pmcu3feiga"]
+
+[ext_resource type="Script" path="res://Scripts/battle_system.gd" id="1_rrc3f"]
 
 [node name="Autoload" type="Node"]
 
 [node name="BattleSystem" type="BattleSystem" parent="."]
+script = ExtResource("1_rrc3f")

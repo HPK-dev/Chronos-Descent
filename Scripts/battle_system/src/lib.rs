@@ -22,7 +22,7 @@ use event::{
 };
 use godot::{
     classes::Engine,
-    global::{godot_print, godot_print_rich},
+    global::godot_print_rich,
     obj::{Base, InstanceId},
     prelude::{gdextension, godot_api, ExtensionLibrary, GodotClass, INode},
 };
@@ -97,12 +97,11 @@ impl BattleSystem {
     fn cmd_print_entities(&self) -> String {
         let map = self.world.resource::<GodotInstanceIdMap>();
 
-        format!("{:#?}", map.0)
-
-        // .keys()
-        // .map(|id| id.to_i64().to_string())
-        // .reduce(|a, b| a + "\n" + &b)
-        // .unwrap_or_default()
+        map.0
+            .keys()
+            .map(|k| k.to_string())
+            .reduce(|a, b| a + "\n" + &b)
+            .unwrap_or(String::from("<EMPTY>"))
     }
 
     #[func]
