@@ -1,4 +1,5 @@
 use bevy_ecs::prelude::*;
+use std::fmt::Display;
 
 // TODO: Maybe fetch base stats with some formula?
 
@@ -34,5 +35,38 @@ impl Default for CurrentStats {
             crit_chance: 50.0,
             crit_damage: 100.0,
         }
+    }
+}
+
+impl Display for CurrentStats {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            r#"Stats
+        ======================
+        Health: {}/{}
+        Mana: {}/{}
+        Strength: {}
+        Intelligence: {}
+        Defense: {}
+        Movement speed: {}
+        Attack speed: {}
+        Attack range: {}
+        Crit. Chance: {}%
+        Crit. Damage: {}%
+        "#,
+            self.health,
+            self.max_health,
+            self.mana,
+            self.max_mana,
+            self.strength,
+            self.intelligence,
+            self.defense,
+            self.movement_speed,
+            self.attack_speed,
+            self.attack_range,
+            self.crit_chance,
+            self.crit_damage
+        )
     }
 }

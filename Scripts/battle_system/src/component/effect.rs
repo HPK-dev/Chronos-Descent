@@ -3,6 +3,7 @@ use bevy_ecs::prelude::*;
 use godot::builtin::Vector2;
 use godot::obj::InstanceId;
 use rustc_hash::FxHashMap;
+use std::fmt::Display;
 use uuid::Uuid;
 
 define_mapping! {
@@ -26,6 +27,22 @@ define_mapping! {
     /// Runtime uuid -> effect metadata
     #[derive(Default, Component)]
     EffectsQueue => (FxHashMap<Uuid, EffectMetadata>);
+}
+
+impl Display for EffectsQueue {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            r#"Effects:
+        ======================
+        {}
+        "#,
+            self.0
+                .values()
+                .map(|v| &v.id)
+                .fold(String::new(), |a, b| a + "\n" + b)
+        )
+    }
 }
 
 pub trait GetEffectId {
