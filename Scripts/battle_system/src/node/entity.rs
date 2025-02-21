@@ -26,7 +26,7 @@ impl ICharacterBody2D for Entity {
 #[godot_api]
 impl Entity {
     #[func(virtual)]
-    pub fn on_entity_died(&mut self) {
+    pub fn on_entity_died(&self) {
         godot_print!("{}: I'm died! qaq", self.base().instance_id())
     }
 }
