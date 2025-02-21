@@ -28,19 +28,11 @@ pub fn snapshot_ref_decrease(mut snapshot_map: ResMut<EntitySnapshotMap>) {
         #[cfg(debug_assertions)]
         godot_print!("Snapshot ref count update!");
 
-        let mut outdated_snapshot = Vec::new();
 
         snapshot_map.retain(|id, (_, count)| {
-            if *count == 0 {
-                outdated_snapshot.push(*id);
-                false
-            } else {
-                true
-            }
+            *count != 0
         });
 
-        for id in outdated_snapshot {
-            snapshot_map.remove(&id);
-        }
+      
     }
 }
