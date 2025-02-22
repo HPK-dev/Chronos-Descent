@@ -120,7 +120,7 @@ impl ProjectileBuilder {
     pub fn build(self, shooter: Gd<Entity>) -> Option<Gd<Projectile>> {
         let shooter_instance_id = shooter.instance_id();
 
-        // Create damage source
+        // Create the damage source
         let damage_source = if self.snapshot {
             let mut battle_system =
                 shooter.get_node_as::<BattleSystem>("/root/Autoload/BattleSystem");

@@ -2,15 +2,10 @@ use bevy_ecs::component::Component;
 use enumset::{EnumSet, EnumSetType};
 use godot::obj::InstanceId;
 use uuid::Uuid;
+use crate::define_mapping;
 
 #[derive(Debug, strum::EnumString, strum::Display, EnumSetType)]
 pub enum DamageTag {
-    // == Elements ==
-    // Fire,
-    // Water,
-    // Ice,
-    // Thunder,
-
     // == Damage Types ==
     Physical,
     Magic,
@@ -42,5 +37,8 @@ impl Damage {
     }
 }
 
-#[derive(Component)]
-pub struct DamageQueue(pub Vec<Damage>);
+define_mapping! {
+    #[derive(Component, Default)]
+    DamageQueue => (Vec<Damage>);
+}
+
