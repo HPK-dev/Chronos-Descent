@@ -226,14 +226,14 @@ impl Projectile {
 
         self.base_mut().queue_free();
     }
-
-    fn mount_image(&mut self, res_path: impl AsRef<String>) {
-        unimplemented!(
-            "Maybe we need this function to avoid create every scene for each projectile"
-        )
-    }
 }
 
-/* TODO:
-   - Build projectiles direct in Rust code. (use a Enum to store it)
-*/
+// TODO: Build multiple projectile scene and register at here
+
+pub enum PackedProjectile {}
+
+impl From<Projectile> for PackedScene {
+    fn from(p: Projectile) -> Self {
+        todo!()
+    }
+}
