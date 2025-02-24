@@ -12,20 +12,22 @@ use crate::component::{
 };
 use crate::event::make_snapshot;
 use crate::resource::{EntitySnapshotMap, GodotInstanceIdMap, GodotTimeDelta, GodotTimeScale};
-use bevy_ecs::{
-    event::{event_update_system, EventRegistry},
-    prelude::*,
-};
+use bevy_ecs::event::{event_update_system, EventRegistry};
 use event::{
     ApplyEffectEvent, RegisterEntityEvent, RemoveEffectEvent, TakeDamageEvent,
     UnregisterEntityEvent,
 };
+
+use bevy_ecs::prelude::{Entity, Schedule, World};
+use godot::prelude::{dict, Dictionary};
 use godot::{
     classes::Engine,
-    global::godot_print_rich,
-    obj::{Base, InstanceId},
-    prelude::{gdextension, godot_api, ExtensionLibrary, GodotClass, INode},
+    prelude::{
+        gdextension, godot_api, godot_print_rich, Base, ConvertError,
+        ExtensionLibrary, FromGodot, Gd, GodotClass, GodotConvert, INode, InstanceId, ToGodot,
+    },
 };
+use std::ops::Deref;
 use uuid::Uuid;
 
 struct BattleSystemExtension;
@@ -94,30 +96,22 @@ impl BattleSystem {
     }
 
     #[func]
-    fn cmd_print_entities(&self) -> String {
+    fn cmd_print_entities(&self) -> GodotResult {
         let map = self.world.resource::<GodotInstanceIdMap>();
 
         map.0
             .keys()
             .map(|k| k.to_string())
             .reduce(|a, b| a + "\n" + &b)
-            .unwrap_or(String::from("<EMPTY>"))
+            .ok_or(String::from("<EMPTY>"))
+            .into()
     }
 
     #[func]
-    fn cmd_get_components(&mut self, instance_id: String) -> String {
-        let instance_id = match instance_id.parse() {
-            Ok(entity_id) => InstanceId::from_i64(entity_id),
-            Err(e) => return format!("{}", e),
-        };
-
-        let Some(entity) = self
-            .world
-            .resource::<GodotInstanceIdMap>()
-            .get(&instance_id)
-            .copied()
-        else {
-            return "Entity not found".into();
+    fn cmd_get_components(&mut self, instance_id: String) -> GodotResult {
+        let entity = match self.get_entity(instance_id) {
+            Ok(v) => v,
+            Err(e) => return Err(e).into(),
         };
 
         let mut query = self.world.query::<(
@@ -132,19 +126,48 @@ impl BattleSystem {
 
         let Ok((stats, weapon, eq1, eq2, eq3, eq4, effects)) = query.get(&self.world, entity)
         else {
-            return String::from("Entity not found");
+            return Err(String::from("Entity not found")).into();
         };
 
-        format!(
+        Ok(format!(
             "{}\n{}\n{}\n{}\n{}\n{}\n{}",
             stats, weapon, eq1, eq2, eq3, eq4, effects
-        )
+        ))
+        .into()
+    }
+
+    #[func]
+    fn cmd_kill_entity(&mut self, instance_id: String) -> GodotResult {
+        let instance_id = match instance_id.parse() {
+            Ok(entity_id) => InstanceId::from_i64(entity_id),
+            Err(e) => return Err(e.to_string()).into(),
+        };
+
+        let gd_entity: Gd<node::Entity> = Gd::from_instance_id(instance_id);
+
+        gd_entity.bind().on_entity_died();
+
+        Ok("".into()).into()
     }
 }
 
-/// Commands
-impl BattleSystem {}
+/// Helper
+impl BattleSystem {
+    fn get_entity(&self, instance_id: String) -> Result<Entity, String> {
+        let instance_id = match instance_id.parse() {
+            Ok(entity_id) => InstanceId::from_i64(entity_id),
+            Err(e) => return Err(e.to_string()),
+        };
 
+        self.world
+            .resource::<GodotInstanceIdMap>()
+            .get(&instance_id)
+            .copied()
+            .ok_or(format!("Failed to find entity {}", instance_id))
+    }
+}
+
+/// Public APIs
 impl BattleSystem {
     pub fn register_entity(&mut self, instance_id: InstanceId) {
         self.world.trigger(RegisterEntityEvent(instance_id));
@@ -180,5 +203,52 @@ impl BattleSystem {
         snapshot_map.insert(id, (copied_entity, ref_count));
 
         Some(id)
+    }
+}
+
+define_mapping! {
+    #[derive(Debug)]
+    GodotResult => ((String, bool));
+}
+
+impl From<Result<String, String>> for GodotResult {
+    fn from(value: Result<String, String>) -> Self {
+        match value {
+            Ok(v) => Self((v, false)),
+            Err(v) => Self((v, true)),
+        }
+    }
+}
+
+impl GodotConvert for GodotResult {
+    type Via = Dictionary;
+}
+
+impl FromGodot for GodotResult {
+    fn try_from_godot(via: Self::Via) -> Result<Self, ConvertError> {
+        let message = via
+            .get("message")
+            .map(|value| value.try_to::<String>())
+            .ok_or(ConvertError::new("Missing \"message\" field"))??;
+        let is_error = via
+            .get("is_error")
+            .map(|value| value.try_to::<bool>())
+            .transpose()?
+            .unwrap_or_default();
+
+        Ok(Self((message, is_error)))
+    }
+}
+
+impl ToGodot for GodotResult {
+    type ToVia<'v> = Dictionary;
+
+    fn to_godot(&self) -> Self::ToVia<'_> {
+        let (message, is_error): &(String, bool) = self.deref();
+
+        dict! {
+            "message": message.to_string(),
+            "is_error": *is_error,
+        }
     }
 }
