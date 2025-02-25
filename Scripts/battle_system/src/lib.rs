@@ -143,9 +143,9 @@ impl BattleSystem {
             Err(e) => return Err(e.to_string()).into(),
         };
 
-        let gd_entity: Gd<node::Entity> = Gd::from_instance_id(instance_id);
+        let mut gd_entity: Gd<node::Entity> = Gd::from_instance_id(instance_id);
 
-        gd_entity.bind().on_entity_died();
+        gd_entity.bind_mut().on_entity_died();
 
         Ok("".into()).into()
     }
