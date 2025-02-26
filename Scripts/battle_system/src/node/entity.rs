@@ -1,6 +1,7 @@
 use crate::BattleSystem;
 use godot::classes::{CharacterBody2D, ICharacterBody2D};
 use godot::prelude::*;
+use strum::EnumString;
 
 #[derive(GodotClass)]
 #[class(base=CharacterBody2D)]
@@ -37,6 +38,20 @@ impl Entity {
     pub fn on_entity_died(&mut self) {
         godot_print!("{}: I'm died!", self.base().instance_id());
         self.base_mut().queue_free();
+    }
+}
+
+#[derive(EnumString, strum::Display)]
+pub enum PackedEntity {
+    Dummy,
+}
+
+impl TryFrom<PackedEntity> for Gd<PackedScene> {
+    type Error = IoError;
+
+    fn try_from(value: PackedEntity) -> Result<Self, Self::Error> {
+        let path = format!("res://Scenes/entity/{}.tscn", value.to_string());
+        try_load(&path)
     }
 }
 

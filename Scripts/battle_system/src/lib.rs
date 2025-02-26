@@ -18,16 +18,20 @@ use event::{
     UnregisterEntityEvent,
 };
 
+use crate::node::PackedEntity;
 use bevy_ecs::prelude::{Entity, Schedule, World};
-use godot::prelude::{dict, Dictionary};
+use godot::classes::PackedScene;
+use godot::obj::WithBaseField;
+use godot::prelude::{dict, Dictionary, Node};
 use godot::{
     classes::Engine,
     prelude::{
-        gdextension, godot_api, godot_print_rich, Base, ConvertError,
-        ExtensionLibrary, FromGodot, Gd, GodotClass, GodotConvert, INode, InstanceId, ToGodot,
+        gdextension, godot_api, godot_print_rich, Base, ConvertError, ExtensionLibrary, FromGodot,
+        Gd, GodotClass, GodotConvert, INode, InstanceId, ToGodot,
     },
 };
 use std::ops::Deref;
+use std::str::FromStr;
 use uuid::Uuid;
 
 struct BattleSystemExtension;
@@ -35,16 +39,84 @@ struct BattleSystemExtension;
 #[gdextension]
 unsafe impl ExtensionLibrary for BattleSystemExtension {}
 
+macro_rules! gd_result_try {
+    ($e:expr) => {{
+        match $e {
+            Ok(v) => v,
+            Err(e) => return Err(e.to_string()).into(),
+        }
+    }};
+}
+
+define_mapping! {
+    #[derive(Debug)]
+    GodotResult => ((String, bool));
+}
+
+impl GodotResult {
+    pub fn ok(msg: impl Into<String>) -> Self {
+        Self((msg.into(), false))
+    }
+
+    pub fn err(msg: impl Into<String>) -> Self {
+        Self((msg.into(), true))
+    }
+}
+
+impl From<Result<String, String>> for GodotResult {
+    fn from(value: Result<String, String>) -> Self {
+        match value {
+            Ok(v) => Self((v, false)),
+            Err(v) => Self((v, true)),
+        }
+    }
+}
+
+impl GodotConvert for GodotResult {
+    type Via = Dictionary;
+}
+
+impl FromGodot for GodotResult {
+    fn try_from_godot(via: Self::Via) -> Result<Self, ConvertError> {
+        let message = via
+            .get("message")
+            .map(|value| value.try_to::<String>())
+            .ok_or(ConvertError::new("Missing \"message\" field"))??;
+        let is_error = via
+            .get("is_error")
+            .map(|value| value.try_to::<bool>())
+            .transpose()?
+            .unwrap_or_default();
+
+        Ok(Self((message, is_error)))
+    }
+}
+
+impl ToGodot for GodotResult {
+    type ToVia<'v> = Dictionary;
+
+    fn to_godot(&self) -> Self::ToVia<'_> {
+        let (message, is_error): &(String, bool) = self.deref();
+
+        dict! {
+            "message": message.to_string(),
+            "is_error": *is_error,
+        }
+    }
+}
+
 #[derive(GodotClass)]
 #[class(base=Node)]
 pub struct BattleSystem {
     pub world: World,
     pub schedule: Schedule,
+
+    base: Base<Node>,
 }
 
 #[godot_api]
 impl INode for BattleSystem {
-    fn init(_: Base<Self::Base>) -> Self {
+    fn init(base: Base<Self::Base>) -> Self {
         let mut schedule = Schedule::default();
         let mut world = World::new();
 
@@ -72,7 +144,11 @@ impl INode for BattleSystem {
             .add_systems(system::snapshot_ref_decrease);
 
         godot_print_rich!(r#"[font_size=30] Battle system is initilized! [/font_size]"#);
-        Self { world, schedule }
+        Self {
+            world,
+            schedule,
+            base,
+        }
     }
 
     fn physics_process(&mut self, delta: f64) {
@@ -129,25 +205,35 @@ impl BattleSystem {
             return Err(String::from("Entity not found")).into();
         };
 
-        Ok(format!(
+        GodotResult::ok(format!(
             "{}\n{}\n{}\n{}\n{}\n{}\n{}",
             stats, weapon, eq1, eq2, eq3, eq4, effects
         ))
-        .into()
     }
 
     #[func]
     fn cmd_kill_entity(&mut self, instance_id: String) -> GodotResult {
-        let instance_id = match instance_id.parse() {
-            Ok(entity_id) => InstanceId::from_i64(entity_id),
-            Err(e) => return Err(e.to_string()).into(),
-        };
-
-        let mut gd_entity: Gd<node::Entity> = Gd::from_instance_id(instance_id);
+        let mut gd_entity: Gd<node::Entity> =
+            Gd::from_instance_id(InstanceId::from_i64(gd_result_try!(instance_id.parse())));
 
         gd_entity.bind_mut().on_entity_died();
 
-        Ok("".into()).into()
+        GodotResult::ok(format!("Killed entity: {}", gd_entity))
+    }
+
+    #[func]
+    fn cmd_spawn_entity(&mut self, scene_name: String) -> GodotResult {
+        let scene: Gd<PackedScene> =
+            gd_result_try!(gd_result_try!(PackedEntity::from_str(&scene_name)).try_into());
+        
+        if let Some(entity) = scene.instantiate() {
+            let mut battle_scene = self.base().get_node_as::<Node>("/root/BattleScene");
+            battle_scene.add_child(&entity);
+
+            GodotResult::ok(format!("Spawned entity: {}", entity.instance_id()))
+        } else {
+            GodotResult::err(format!("Cannot spawn this type of entity: {}", scene_name))
+        }
     }
 }
 
@@ -203,52 +289,5 @@ impl BattleSystem {
         snapshot_map.insert(id, (copied_entity, ref_count));
 
         Some(id)
-    }
-}
-
-define_mapping! {
-    #[derive(Debug)]
-    GodotResult => ((String, bool));
-}
-
-impl From<Result<String, String>> for GodotResult {
-    fn from(value: Result<String, String>) -> Self {
-        match value {
-            Ok(v) => Self((v, false)),
-            Err(v) => Self((v, true)),
-        }
-    }
-}
-
-impl GodotConvert for GodotResult {
-    type Via = Dictionary;
-}
-
-impl FromGodot for GodotResult {
-    fn try_from_godot(via: Self::Via) -> Result<Self, ConvertError> {
-        let message = via
-            .get("message")
-            .map(|value| value.try_to::<String>())
-            .ok_or(ConvertError::new("Missing \"message\" field"))??;
-        let is_error = via
-            .get("is_error")
-            .map(|value| value.try_to::<bool>())
-            .transpose()?
-            .unwrap_or_default();
-
-        Ok(Self((message, is_error)))
-    }
-}
-
-impl ToGodot for GodotResult {
-    type ToVia<'v> = Dictionary;
-
-    fn to_godot(&self) -> Self::ToVia<'_> {
-        let (message, is_error): &(String, bool) = self.deref();
-
-        dict! {
-            "message": message.to_string(),
-            "is_error": *is_error,
-        }
     }
 }
