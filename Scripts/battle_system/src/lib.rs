@@ -20,16 +20,10 @@ use event::{
 
 use crate::node::PackedEntity;
 use bevy_ecs::prelude::{Entity, Schedule, World};
-use godot::classes::PackedScene;
-use godot::obj::WithBaseField;
-use godot::prelude::{dict, Dictionary, Node};
-use godot::{
-    classes::Engine,
-    prelude::{
-        gdextension, godot_api, godot_print_rich, Base, ConvertError, ExtensionLibrary, FromGodot,
-        Gd, GodotClass, GodotConvert, INode, InstanceId, ToGodot,
-    },
-};
+
+use godot::prelude::*;
+
+use godot::classes::Engine;
 use std::ops::Deref;
 use std::str::FromStr;
 use uuid::Uuid;
@@ -212,7 +206,7 @@ impl BattleSystem {
     }
 
     #[func]
-    fn cmd_kill_entity(&mut self, instance_id: String) -> GodotResult {
+    fn cmd_kill_entity(&self, instance_id: String) -> GodotResult {
         let mut gd_entity: Gd<node::Entity> =
             Gd::from_instance_id(InstanceId::from_i64(gd_result_try!(instance_id.parse())));
 
@@ -221,13 +215,14 @@ impl BattleSystem {
         GodotResult::ok(format!("Killed entity: {}", gd_entity))
     }
 
-    #[func]
-    fn cmd_spawn_entity(&mut self, scene_name: String) -> GodotResult {
+    #[func(gd_self)]
+    fn cmd_spawn_entity(this: Gd<Self>, scene_name: String) -> GodotResult {
         let scene: Gd<PackedScene> =
             gd_result_try!(gd_result_try!(PackedEntity::from_str(&scene_name)).try_into());
-        
+
         if let Some(entity) = scene.instantiate() {
-            let mut battle_scene = self.base().get_node_as::<Node>("/root/BattleScene");
+            let mut battle_scene = this.get_node_as::<Node>("/root/BattleScene");
+
             battle_scene.add_child(&entity);
 
             GodotResult::ok(format!("Spawned entity: {}", entity.instance_id()))

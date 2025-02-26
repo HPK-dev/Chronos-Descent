@@ -31,9 +31,6 @@ pub fn unregister_entity(
     mut cmd: Commands,
     mut index: ResMut<GodotInstanceIdMap>,
 ) {
-    #[cfg(debug_assertions)]
-    godot_print!("unregister_entity");
-
     let godot_instance_id = trigger.event().0;
     if let Some(entity) = index.remove(&godot_instance_id) {
         cmd.entity(entity).despawn();
