@@ -27,7 +27,7 @@ pub fn register_entity(
 }
 
 pub fn unregister_entity(
-    trigger: Trigger<RegisterEntityEvent>,
+    trigger: Trigger<UnregisterEntityEvent>,
     mut cmd: Commands,
     mut index: ResMut<GodotInstanceIdMap>,
 ) {
