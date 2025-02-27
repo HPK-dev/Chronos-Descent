@@ -1,9 +1,8 @@
 use crate::component::{CurrentStats, GodotInstanceId};
-use crate::node;
 use crate::resource::EntitySnapshotMap;
 use bevy_ecs::prelude::*;
 use godot::global::godot_print;
-use godot::prelude::Gd;
+use godot::prelude::{Gd, Node};
 
 pub fn current_stats_update(
     query: Query<(Entity, &CurrentStats, &GodotInstanceId), Changed<CurrentStats>>,
@@ -15,7 +14,7 @@ pub fn current_stats_update(
     for (entity, stats, id) in query.iter() {
         if stats.health <= 0.0 {
             cmd.entity(entity).despawn();
-            let gd_obj: Gd<node::Entity> = Gd::from_instance_id(**id);
+            let gd_obj: Gd<Node> = Gd::from_instance_id(**id);
             gd_obj.callable("on_entity_died").call(&[]);
         }
     }

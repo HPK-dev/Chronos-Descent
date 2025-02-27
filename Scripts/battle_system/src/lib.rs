@@ -18,7 +18,7 @@ use event::{
     UnregisterEntityEvent,
 };
 
-use crate::node::PackedEntity;
+
 use bevy_ecs::prelude::{Entity, Schedule, World};
 
 use godot::prelude::*;
@@ -27,6 +27,7 @@ use godot::classes::Engine;
 use std::ops::Deref;
 use std::str::FromStr;
 use uuid::Uuid;
+use crate::node::PackedEntity;
 
 struct BattleSystemExtension;
 
@@ -207,62 +208,68 @@ impl BattleSystem {
         ))
     }
 
-    #[func]
-    fn cmd_kill_entity(&self, instance_id: String) -> GodotResult {
-        let mut gd_entity: Gd<node::Entity> =
-            Gd::from_instance_id(InstanceId::from_i64(gd_result_try!(instance_id.parse())));
 
-        gd_entity.bind_mut().on_entity_died();
-
-        GodotResult::ok(format!("Killed entity: {}", gd_entity))
-    }
 
     #[func(gd_self)]
     fn cmd_spawn_entity(this: Gd<Self>, scene_name: String, x: String, y: String) -> GodotResult {
         // Load and instantiate the scene
         let scene: Gd<PackedScene> =
             gd_result_try!(gd_result_try!(PackedEntity::from_str(&scene_name)).try_into());
-
+    
         let mut entity = gd_result_try!(scene
             .instantiate()
             .map(|e| e.cast::<Node2D>())
             .ok_or(format!("Cannot instantiate scene: {}", scene_name)));
-
+    
         // Get the current scene
-        let mut current_scene = gd_result_try!(gd_result_try!(this
+        let mut current_scene: Gd<Node> = gd_result_try!(gd_result_try!(this
             .get_tree()
             .ok_or("Cannot get scene tree"))
         .get_current_scene()
         .ok_or("Cannot get current scene"));
-
+    
         // Parse coordinates relative to player position if available
-        if let Some(player_node) = current_scene.get_child(0) {
+        let (ox, oy) = if let Some(player_node) = current_scene.get_node_or_null("PlayerEntity") {
             let player_node = player_node.cast::<Node2D>();
             let Vector2 { x: ox, y: oy } = player_node.get_global_position();
-
-            let parse_coord = |input: String, origin: f32, axis: &str| -> Result<f32, String> {
-                if input.is_empty() {
-                    Ok(origin)
-                }
-                else if let Some(rel) = input.strip_prefix('~') {
-                    rel.parse::<f32>()
-                        .map(|d| origin + d)
-                        .map_err(|_| format!("Invalid {}-coordinate: {}", axis, input))
-                } else {
-                    input
-                        .parse::<f32>()
-                        .map_err(|_| format!("Invalid {}-coordinate: {}", axis, input))
-                }
-            };
-
-            let x = gd_result_try!(parse_coord(x, ox, "x"));
-            let y = gd_result_try!(parse_coord(y, oy, "y"));
-            entity.set_global_position(Vector2::new(x, y));
-        }
-
+            (ox, oy)
+        } else {
+            (0.0, 0.0)
+        };
+    
+        let x = gd_result_try!(parse_coord(x, ox, "x"));
+        let y = gd_result_try!(parse_coord(y, oy, "y"));
+        entity.set_global_position(Vector2::new(x, y));
+    
         // Add entity to the scene
         current_scene.add_child(&entity);
         GodotResult::ok(format!("Spawned entity: {}", entity.instance_id()))
+    }
+
+    #[func]
+    pub fn register_entity(&mut self, instance_id: i64) {
+        self.world
+            .trigger(RegisterEntityEvent(InstanceId::from_i64(instance_id)));
+    }
+
+    #[func]
+    pub fn unregister_entity(&mut self, instance_id: i64) {
+        self.world
+            .trigger(UnregisterEntityEvent(InstanceId::from_i64(instance_id)));
+    }
+}
+
+fn parse_coord(input: String, origin: f32, axis: &str) -> Result<f32, String> {
+    if input.is_empty() {
+        Ok(origin)
+    } else if let Some(rel) = input.strip_prefix('~') {
+        rel.parse::<f32>()
+            .map(|d| origin + d)
+            .map_err(|_| format!("Invalid {}-coordinate: {}", axis, input))
+    } else {
+        input
+            .parse::<f32>()
+            .map_err(|_| format!("Invalid {}-coordinate: {}", axis, input))
     }
 }
 
@@ -284,14 +291,6 @@ impl BattleSystem {
 
 /// Public APIs
 impl BattleSystem {
-    pub fn register_entity(&mut self, instance_id: InstanceId) {
-        self.world.trigger(RegisterEntityEvent(instance_id));
-    }
-
-    pub fn unregister_entity(&mut self, instance_id: InstanceId) {
-        self.world.trigger(UnregisterEntityEvent(instance_id));
-    }
-
     pub fn new_snapshot(&mut self, instance_id: &InstanceId, ref_count: usize) -> Option<Uuid> {
         let origin_entity = {
             let instance_map = self.world.resource::<GodotInstanceIdMap>();

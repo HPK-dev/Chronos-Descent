@@ -15,20 +15,13 @@ impl ICharacterBody2D for Entity {
         Self { base }
     }
 
-    fn enter_tree(&mut self) {
+    fn ready(&mut self) {
         let base = self.base_mut();
-        let instance_id = base.instance_id();
-        let mut battle_system = base.get_node_as::<BattleSystem>("/root/Autoload/BattleSystem");
+        let instance_id = base.instance_id().to_i64();
+        let mut battle_system: Gd<BattleSystem> =
+            base.get_node_as("/root/BattleScene/BattleSystem");
 
         battle_system.bind_mut().register_entity(instance_id);
-    }
-
-    fn exit_tree(&mut self) {
-        let base = self.base_mut();
-        let instance_id = base.instance_id();
-        let mut battle_system = base.get_node_as::<BattleSystem>("/root/Autoload/BattleSystem");
-
-        battle_system.bind_mut().unregister_entity(instance_id);
     }
 }
 
@@ -37,7 +30,13 @@ impl Entity {
     #[func(virtual)]
     pub fn on_entity_died(&mut self) {
         godot_print!("{}: I'm died!", self.base().instance_id());
-        self.base_mut().queue_free();
+        let mut base = self.base_mut();
+        let instance_id = base.instance_id().to_i64();
+        let mut battle_system: Gd<BattleSystem> =
+            base.get_node_as("/root/BattleScene/BattleSystem");
+
+        battle_system.bind_mut().unregister_entity(instance_id);
+        base.queue_free();
     }
 }
 

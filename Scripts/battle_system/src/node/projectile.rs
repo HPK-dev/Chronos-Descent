@@ -1,4 +1,4 @@
-use super::entity::Entity;
+
 use crate::component::{Damage, DamageSource, DamageTag};
 use crate::event::TakeDamageEvent;
 use crate::resource::EntitySnapshotMap;
