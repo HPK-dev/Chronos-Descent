@@ -1,12 +1,8 @@
-[gd_scene load_steps=3 format=3 uid="uid://dijolw5kehato"]
+[gd_scene load_steps=2 format=3 uid="uid://dijolw5kehato"]
 
-[ext_resource type="PackedScene" uid="uid://bvk05e0bvca3f" path="res://Scenes/entity/player.tscn" id="1_esn2o"]
-[ext_resource type="PackedScene" uid="uid://7x2bupn6pu7g" path="res://Scenes/entity/dummy.tscn" id="2_y2j5v"]
+[ext_resource type="Script" path="res://Scripts/battle_system.gd" id="1_46jpw"]
 
 [node name="BattleScene" type="Node"]
 
-[node name="Player" parent="." instance=ExtResource("1_esn2o")]
-position = Vector2(30, 504)
-
-[node name="TestEnemy" parent="." instance=ExtResource("2_y2j5v")]
-position = Vector2(1018, 432)
+[node name="BattleSystem" type="BattleSystem" parent="."]
+script = ExtResource("1_46jpw")
