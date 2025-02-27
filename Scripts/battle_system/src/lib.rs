@@ -34,10 +34,12 @@ struct BattleSystemExtension;
 unsafe impl ExtensionLibrary for BattleSystemExtension {}
 
 macro_rules! gd_result_try {
-    ($e:expr) => {{
-        match $e {
+    ($value:expr $(, $err_msg:expr)?  ) => {{
+        match $value {
             Ok(v) => v,
-            Err(e) => return Err(e.to_string()).into(),
+            Err(e) => return Err(
+                unwrap_or!(e, $($err_msg)?).to_string()
+            ).into(),
         }
     }};
 }
@@ -216,19 +218,51 @@ impl BattleSystem {
     }
 
     #[func(gd_self)]
-    fn cmd_spawn_entity(this: Gd<Self>, scene_name: String) -> GodotResult {
+    fn cmd_spawn_entity(this: Gd<Self>, scene_name: String, x: String, y: String) -> GodotResult {
+        // Load and instantiate the scene
         let scene: Gd<PackedScene> =
             gd_result_try!(gd_result_try!(PackedEntity::from_str(&scene_name)).try_into());
 
-        if let Some(entity) = scene.instantiate() {
-            let mut battle_scene = this.get_node_as::<Node>("/root/BattleScene");
+        let mut entity = gd_result_try!(scene
+            .instantiate()
+            .map(|e| e.cast::<Node2D>())
+            .ok_or(format!("Cannot instantiate scene: {}", scene_name)));
 
-            battle_scene.add_child(&entity);
+        // Get the current scene
+        let mut current_scene = gd_result_try!(gd_result_try!(this
+            .get_tree()
+            .ok_or("Cannot get scene tree"))
+        .get_current_scene()
+        .ok_or("Cannot get current scene"));
 
-            GodotResult::ok(format!("Spawned entity: {}", entity.instance_id()))
-        } else {
-            GodotResult::err(format!("Cannot spawn this type of entity: {}", scene_name))
+        // Parse coordinates relative to player position if available
+        if let Some(player_node) = current_scene.get_child(0) {
+            let player_node = player_node.cast::<Node2D>();
+            let Vector2 { x: ox, y: oy } = player_node.get_global_position();
+
+            let parse_coord = |input: String, origin: f32, axis: &str| -> Result<f32, String> {
+                if input.is_empty() {
+                    Ok(origin)
+                }
+                else if let Some(rel) = input.strip_prefix('~') {
+                    rel.parse::<f32>()
+                        .map(|d| origin + d)
+                        .map_err(|_| format!("Invalid {}-coordinate: {}", axis, input))
+                } else {
+                    input
+                        .parse::<f32>()
+                        .map_err(|_| format!("Invalid {}-coordinate: {}", axis, input))
+                }
+            };
+
+            let x = gd_result_try!(parse_coord(x, ox, "x"));
+            let y = gd_result_try!(parse_coord(y, oy, "y"));
+            entity.set_global_position(Vector2::new(x, y));
         }
+
+        // Add entity to the scene
+        current_scene.add_child(&entity);
+        GodotResult::ok(format!("Spawned entity: {}", entity.instance_id()))
     }
 }
 
