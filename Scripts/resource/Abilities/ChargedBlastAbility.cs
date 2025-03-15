@@ -4,13 +4,12 @@ using Godot;
 namespace ChronosDescent.Scripts.resource.Abilities;
 
 [GlobalClass]
-public partial class ChargedBlastAbility : Ability
+public partial class ChargedBlastAbility : BaseChargedAbility
 {
     public ChargedBlastAbility()
     {
         Name = "Charged Blast";
         Description = "Hold to charge a powerful blast. Longer charge increases radius and damage.";
-        Type = AbilityType.Charged;
         Cooldown = 8.0;
         MaxChargeTime = 2.0;
         MinChargeTime = 0.3;

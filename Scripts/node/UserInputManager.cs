@@ -121,7 +121,7 @@ public partial class UserInputManager : Control
     private bool IsControllerActive()
     {
         return Input.GetConnectedJoypads().Count != 0 &&
-               Input.IsJoyButtonPressed(_controllerIndex, JoyButton.Guide);
+               Input.IsJoyButtonPressed(_controllerIndex, JoyButton.Start);
     }
 
     /// <summary>

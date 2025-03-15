@@ -23,16 +23,18 @@ public partial class Entity : CharacterBody2D
         EntityDeath?.Invoke(entity);
     }
 
+    
     public override void _Ready()
     {
         // Get component references
         Stats = GetNode<StatsComponent>("StatsComponent");
         EffectManager = GetNode<EffectManagerComponent>("EffectManagerComponent");
-        Animation = GetNode<AnimationComponent>("AnimationComponent");
-        Combat = GetNode<CombatComponent>("CombatComponent");
-        TimeManipulation = GetNode<TimeManipulationComponent>("TimeManipulationComponent");
-        AbilityManager = GetNode<AbilityManagerComponent>("AbilityManagerComponent");
         DamageIndicatorManager = GetNode<DamageIndicatorManagerComponent>("DamageIndicatorManagerComponent");
+        Combat = GetNode<CombatComponent>("CombatComponent");
+        
+        TimeManipulation = GetNodeOrNull<TimeManipulationComponent>("TimeManipulationComponent");
+        AbilityManager = GetNodeOrNull<AbilityManagerComponent>("AbilityManagerComponent");
+        Animation = GetNodeOrNull<AnimationComponent>("AnimationComponent");
 
         // Setup component connections
         EffectManager.Initialize(Stats);

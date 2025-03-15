@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using ChronosDescent.Scripts.node;
 using ChronosDescent.Scripts.node.Component;
 using Godot;
@@ -5,18 +6,19 @@ using Godot;
 namespace ChronosDescent.Scripts.resource.Abilities;
 
 [GlobalClass]
-public partial class DashAbility : Ability
+public partial class DashAbility : BaseActiveAbility
 {
     private Vector2 _dashDirection = Vector2.Zero;
     private Vector2 _dashTarget = Vector2.Zero;
-
     private bool _isDashing;
+
+    // Add a HashSet to track damaged entities during this dash
+    private HashSet<Entity> _damagedEntities = [];
 
     public DashAbility()
     {
         Name = "Dash";
         Description = "Quickly dash in a direction";
-        Type = AbilityType.Active;
         Cooldown = 3.0;
     }
 
@@ -26,11 +28,8 @@ public partial class DashAbility : Ability
     [Export] public double DashDamage { get; set; } = 15.0;
     [Export] public double DamageRadius { get; set; } = 50.0;
 
-    public override void Activate()
+    protected override void ExecuteEffect()
     {
-        // Start cooldown
-        StartCooldown();
-
         // Get the direction to dash
         Vector2 direction;
         if (Caster is Player player)
@@ -52,6 +51,9 @@ public partial class DashAbility : Ability
         _dashDirection = direction.Normalized();
         _dashTarget = Caster.Position + _dashDirection * (float)DashDistance;
 
+        // Clear the damaged entities set for this new dash
+        _damagedEntities.Clear();
+
         // Disable collision
         Caster.DisableCollision(true);
         Caster.Moveable = false;
@@ -59,12 +61,10 @@ public partial class DashAbility : Ability
         GD.Print($"{Caster.Name} activated {Name} in direction {_dashDirection}");
     }
 
-
     public override void Update(double delta)
     {
+        base.Update(delta);
 
-        UpdateCooldown(delta);
-        
         if (!_isDashing) return;
 
         // Calculate movement distance this frame
@@ -94,9 +94,6 @@ public partial class DashAbility : Ability
     {
         if (Caster == null) return;
 
-        // Deal final damage if enabled
-        if (DamageOnDash) DealDashDamage();
-
         // Re-enable movement
         Caster.Moveable = true;
 
@@ -105,7 +102,7 @@ public partial class DashAbility : Ability
 
         // Enable collision
         Caster.DisableCollision(false);
-        
+
         Caster.Moveable = true;
     }
 
@@ -118,9 +115,16 @@ public partial class DashAbility : Ability
         {
             if (node is not Entity target || target == Caster) continue;
 
+            // Skip if this entity was already damaged during this dash
+            if (_damagedEntities.Contains(target)) continue;
+
             var distance = Caster.GlobalPosition.DistanceTo(target.GlobalPosition);
 
-            if (distance <= DamageRadius) target.TakeDamage(DashDamage);
+            if (distance > DamageRadius) continue;
+            
+            target.TakeDamage(DashDamage);
+            // Add to our set of damaged entities
+            _damagedEntities.Add(target);
         }
     }
 }

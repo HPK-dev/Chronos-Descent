@@ -4,7 +4,7 @@ using BerserkerRageEffect = ChronosDescent.Scripts.resource.Effects.Example.Bers
 namespace ChronosDescent.Scripts.resource.Abilities;
 
 [GlobalClass]
-public partial class BerserkerRageAbility : Ability
+public partial class BerserkerRageAbility : BasePassiveAbility
 {
     private BerserkerRageEffect _rageEffect;
 
@@ -12,7 +12,6 @@ public partial class BerserkerRageAbility : Ability
     {
         Name = "Berserker Rage";
         Description = "Passively gain increased strength as health decreases below 30%";
-        Type = AbilityType.Passive;
         Cooldown = 0.0; // Passive abilities don't have cooldowns
 
         _rageEffect = new BerserkerRageEffect();

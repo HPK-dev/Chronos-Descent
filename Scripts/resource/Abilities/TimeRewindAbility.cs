@@ -6,7 +6,7 @@ using Godot;
 namespace ChronosDescent.Scripts.resource.Abilities;
 
 [GlobalClass]
-public partial class TimeRewindAbility : Ability
+public partial class TimeRewindAbility : BaseChanneledAbility
 {
     private List<TimeManipulationComponent.PositionSpan> _positionHistory = [];
     private double _rewindProgress;
@@ -15,7 +15,6 @@ public partial class TimeRewindAbility : Ability
     {
         Name = "Time Rewind";
         Description = "Rewind time to a previous position";
-        Type = AbilityType.Channeled;
         Cooldown = 15.0;
         ChannelingDuration = 1.0;
     }
@@ -25,10 +24,10 @@ public partial class TimeRewindAbility : Ability
 
     public override bool CanActivate()
     {
-        if (!base.CanActivate()) return false;
-
         // Check if there's enough history to rewind
         if (Caster.TimeManipulation == null) return false;
+
+        if (!base.CanActivate()) return false;
 
         _positionHistory = Caster.TimeManipulation.GetPositionHistory(RewindDuration).ToList();
         return _positionHistory.Count > 0;
@@ -36,6 +35,8 @@ public partial class TimeRewindAbility : Ability
 
     public override void Activate()
     {
+        base.Activate();
+
         // Start rewinding
         _rewindProgress = 0.0;
 
@@ -45,19 +46,7 @@ public partial class TimeRewindAbility : Ability
         // Pause recording during rewind
         Caster.TimeManipulation.PauseRecording();
 
-        IsChanneling = true;
-        CurrentChannelingTime = 0.0;
-        OnChannelingStart();
-
         GD.Print($"{Caster.Name} activated {Name} - rewinding {RewindDuration} seconds");
-    }
-
-    public override void Update(double delta)
-    {
-        if (!IsChanneling) return;
-        CurrentChannelingTime += delta;
-        OnChannelingTick(delta);
-        if (CurrentChannelingTime >= ChannelingDuration) CompleteChanneling();
     }
 
 
@@ -86,6 +75,20 @@ public partial class TimeRewindAbility : Ability
         // Set final position
         if (_positionHistory.Count > 0) Caster.Position = _positionHistory[^1].Position;
 
+        CleanUp();
+
+        GD.Print($"{Caster.Name} completed channeling {Name}");
+    }
+
+    protected override void OnChannelingInterrupt()
+    {
+        CleanUp();
+
+        GD.Print($"{Caster.Name}'s {Name} channeling was interrupted");
+    }
+
+    private void CleanUp()
+    {
         // Resume time recording
         Caster.TimeManipulation.ResumeRecording();
 
@@ -97,15 +100,5 @@ public partial class TimeRewindAbility : Ability
 
         // Start cooldown
         StartCooldown();
-
-        GD.Print($"{Caster.Name} completed channeling {Name}");
-    }
-
-    protected override void OnChannelingInterrupt()
-    {
-        // Resume time recording
-        Caster.TimeManipulation.ResumeRecording();
-
-        GD.Print($"{Caster.Name}'s {Name} channeling was interrupted");
     }
 }

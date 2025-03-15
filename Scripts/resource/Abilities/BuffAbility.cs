@@ -4,7 +4,7 @@ using Godot;
 namespace ChronosDescent.Scripts.resource.Abilities;
 
 [GlobalClass]
-public partial class BuffAbility : Ability
+public partial class BuffAbility :BaseToggleAbility
 {
     private double _lastTick;
 
@@ -12,7 +12,6 @@ public partial class BuffAbility : Ability
     {
         Name = "Buff";
         Description = "Apply a beneficial effect";
-        Type = AbilityType.Toggle; // Default to toggle
         Cooldown = 1.0; // Short cooldown for toggle abilities
     }
 
